@@ -144,8 +144,9 @@ void processJoystick() {
     || xVal < JOY_CENTER - JOY_DEADZONE || xVal > JOY_CENTER + JOY_DEADZONE) {
     // The distance from the centre of the joystick is measured and reduced
     // by a factor of 100 so that it can be used as a variable
-    int deltaX = abs(JOY_CENTER - xVal)/100;
-    int deltaY = abs(JOY_CENTER - yVal)/100;
+    int deltaX = abs(JOY_CENTER - xVal)/100 + 1;
+    int deltaY = abs(JOY_CENTER - yVal)/100 + 1;
+
 
     // map updates here
     redrawMap();
@@ -172,9 +173,9 @@ void processJoystick() {
 
     cursorY = constrain(cursorY, 0 + (CURSOR_SIZE/2),
       DISPLAY_HEIGHT - (CURSOR_SIZE/2));
-  }
     // Draw a red square at the new position
     redrawCursor(ILI9341_RED);
+  }
 
 
   delay(20);
