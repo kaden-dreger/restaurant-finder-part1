@@ -116,7 +116,18 @@ void redrawCursor(uint16_t colour) {
 void moveMap() {
   lcd_image_draw(&yegImage, &tft, MAPX, MAPY,
                  0, 0, DISPLAY_WIDTH - 48, DISPLAY_HEIGHT);
+  CURSORY = DISPLAY_HEIGHT/2;
+  CURSORX =  (DISPLAY_WIDTH - 48)/2;
   //redrawCursor(ILI9341_RED);
+}
+
+
+void checkMap() {
+  MAPX = constrain(MAPX, 0,
+      YEG_SIZE - DISPLAY_WIDTH - 48);
+
+  MAPY = constrain(MAPY, 0,
+      YEG_SIZE - DISPLAY_HEIGHT);
 }
 
 void processJoystick() {
@@ -169,32 +180,29 @@ void processJoystick() {
 
     CURSORY = constrain(CURSORY, 0 + (CURSOR_SIZE/2),
       DISPLAY_HEIGHT - (CURSOR_SIZE/2));
+
     // Draw a red square at the new position
     redrawCursor(ILI9341_RED);
     Serial.println(CURSORX);
 
     if (CURSORX <= CURSOR_SIZE/2) {
       MAPX -= DISPLAY_WIDTH - 48;
-      CURSORY = DISPLAY_HEIGHT/2;
-      CURSORX =  (DISPLAY_WIDTH - 48)/2;
+      checkMap();
       moveMap();
       redrawCursor(ILI9341_RED);
     } else if (CURSORX >= (DISPLAY_WIDTH - 48 - CURSOR_SIZE/2 - 1)) {
       MAPX += DISPLAY_WIDTH - 48;
-      CURSORY = DISPLAY_HEIGHT/2;
-      CURSORX =  (DISPLAY_WIDTH - 48)/2;
+      checkMap();
       moveMap();
       redrawCursor(ILI9341_RED);
     } else if (CURSORY <= CURSOR_SIZE/2) {
       MAPY -= DISPLAY_HEIGHT;
-      CURSORY = DISPLAY_HEIGHT/2;
-      CURSORX =  (DISPLAY_WIDTH - 48)/2;
+      checkMap();
       moveMap();
       redrawCursor(ILI9341_RED);
     } else if (CURSORY >= (DISPLAY_HEIGHT - CURSOR_SIZE/2)) {
       MAPY += DISPLAY_HEIGHT;
-      CURSORY = DISPLAY_HEIGHT/2;
-      CURSORX =  (DISPLAY_WIDTH - 48)/2;
+      checkMap();
       moveMap();
       redrawCursor(ILI9341_RED);
     }
