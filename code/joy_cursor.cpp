@@ -38,7 +38,16 @@ lcd_image_t yegImage = { "yeg-big.lcd", YEG_SIZE, YEG_SIZE };
 #define CURSOR_SIZE 9
 
 // the cursor position on the display
-int cursorX, cursorY;
+int CURSORX, CURSORY;
+int MAPX = YEG_SIZE/2 - (DISPLAY_WIDTH - 48)/2;
+int MAPY = YEG_SIZE/2 - DISPLAY_HEIGHT/2;
+
+
+void moveMap() {
+  lcd_image_draw(&yegImage, &tft, MAPX, MAPY,
+                 0, 0, DISPLAY_WIDTH - 48, DISPLAY_HEIGHT);
+}
+
 
 // forward declaration for redrawing the cursor
 void redrawCursor(uint16_t colour);
@@ -77,14 +86,11 @@ void setup() {
 
   // draws the centre of the Edmonton map
   // leaving the rightmost 48 columns black
-	int yegMiddleX = YEG_SIZE/2 - (DISPLAY_WIDTH - 48)/2;
-	int yegMiddleY = YEG_SIZE/2 - DISPLAY_HEIGHT/2;
-	lcd_image_draw(&yegImage, &tft, yegMiddleX, yegMiddleY,
-                 0, 0, DISPLAY_WIDTH - 48, DISPLAY_HEIGHT);
+  moveMap();
 
   // initial cursor position is the middle of the screen
-  cursorX = (DISPLAY_WIDTH - 48)/2;
-  cursorY = DISPLAY_HEIGHT/2;
+  CURSORX = (DISPLAY_WIDTH - 48)/2;
+  CURSORY = DISPLAY_HEIGHT/2;
 
   redrawCursor(ILI9341_RED);  // Draws the cursor to the screen
 }
@@ -100,12 +106,12 @@ void redrawMap()  {
         This function returns nothing.
   */
   // Setting the middle of the map to the top left of the screen.
-  int yegMiddleX = YEG_SIZE/2 - (DISPLAY_WIDTH - 48)/2;
-  int yegMiddleY = YEG_SIZE/2 - DISPLAY_HEIGHT/2;
+  //int yegMiddleX = YEG_SIZE/2 - (DISPLAY_WIDTH - 48)/2;
+  //int yegMiddleY = YEG_SIZE/2 - DISPLAY_HEIGHT/2;
   // Drawing the map at the last location of the cursor.
-  lcd_image_draw(&yegImage, &tft, yegMiddleX + (cursorX - CURSOR_SIZE/2),
-    yegMiddleY + (cursorY - CURSOR_SIZE/2), cursorX - CURSOR_SIZE/2,
-    cursorY - CURSOR_SIZE/2, CURSOR_SIZE, CURSOR_SIZE);
+  lcd_image_draw(&yegImage, &tft, MAPX + (CURSORX - CURSOR_SIZE/2),
+    MAPY + (CURSORY - CURSOR_SIZE/2), CURSORX - CURSOR_SIZE/2,
+    CURSORY - CURSOR_SIZE/2, CURSOR_SIZE, CURSOR_SIZE);
 }
 
 void redrawCursor(uint16_t colour) {
@@ -119,7 +125,7 @@ void redrawCursor(uint16_t colour) {
         This function returns nothing.
   */
   // Drawing the cursor
-  tft.fillRect(cursorX - CURSOR_SIZE/2, cursorY - CURSOR_SIZE/2,
+  tft.fillRect(CURSORX - CURSOR_SIZE/2, CURSORY - CURSOR_SIZE/2,
                CURSOR_SIZE, CURSOR_SIZE, colour);
 }
 
@@ -154,27 +160,38 @@ void processJoystick() {
     // The cursor moves at a rate proportional with how far the joystick
     // is pressed
     if (yVal < JOY_CENTER - JOY_DEADZONE) {
-      cursorY -= deltaY;  // decrease the y coordinate of the cursor
+      CURSORY -= deltaY;  // decrease the y coordinate of the cursor
     } else if (yVal > JOY_CENTER + JOY_DEADZONE) {
-      cursorY += deltaY;
+      CURSORY += deltaY;
     }
 
     // remember the x-reading increases as we push left
     if (xVal > JOY_CENTER + JOY_DEADZONE) {
-      cursorX -= deltaX;
+      CURSORX -= deltaX;
     } else if (xVal < JOY_CENTER - JOY_DEADZONE) {
-      cursorX += deltaX;
+      CURSORX += deltaX;
     }
 
     // The cursor is restricted to the bounds of the screen and 48
     // pixels from the right.
-    cursorX = constrain(cursorX, 0 + (CURSOR_SIZE/2),
+    CURSORX = constrain(CURSORX, 0 + (CURSOR_SIZE/2),
       DISPLAY_WIDTH - 49 - (CURSOR_SIZE/2));
 
-    cursorY = constrain(cursorY, 0 + (CURSOR_SIZE/2),
+    CURSORY = constrain(CURSORY, 0 + (CURSOR_SIZE/2),
       DISPLAY_HEIGHT - (CURSOR_SIZE/2));
     // Draw a red square at the new position
     redrawCursor(ILI9341_RED);
+    Serial.println(CURSORX);
+
+    if (CURSORX <= CURSOR_SIZE/2) {
+      MAPX -= DISPLAY_WIDTH - 48;
+      CURSORX =  DISPLAY_WIDTH - 48 - CURSOR_SIZE/2 - 1;
+      moveMap();
+    } else if (CURSORX >= (DISPLAY_WIDTH - 48 - CURSOR_SIZE/2 - 1)) {
+      MAPX += DISPLAY_WIDTH - 48;
+      CURSORX = CURSOR_SIZE/2;
+      moveMap();
+    }
   }
 
 
