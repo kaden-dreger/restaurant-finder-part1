@@ -175,22 +175,26 @@ void processJoystick() {
 
     if (CURSORX <= CURSOR_SIZE/2) {
       MAPX -= DISPLAY_WIDTH - 48;
+      CURSORY = DISPLAY_HEIGHT/2;
       CURSORX =  (DISPLAY_WIDTH - 48)/2;
       moveMap();
       redrawCursor(ILI9341_RED);
     } else if (CURSORX >= (DISPLAY_WIDTH - 48 - CURSOR_SIZE/2 - 1)) {
       MAPX += DISPLAY_WIDTH - 48;
-      CURSORX = (DISPLAY_WIDTH - 48)/2;
+      CURSORY = DISPLAY_HEIGHT/2;
+      CURSORX =  (DISPLAY_WIDTH - 48)/2;
       moveMap();
       redrawCursor(ILI9341_RED);
     } else if (CURSORY <= CURSOR_SIZE/2) {
       MAPY -= DISPLAY_HEIGHT;
       CURSORY = DISPLAY_HEIGHT/2;
+      CURSORX =  (DISPLAY_WIDTH - 48)/2;
       moveMap();
       redrawCursor(ILI9341_RED);
     } else if (CURSORY >= (DISPLAY_HEIGHT - CURSOR_SIZE/2)) {
       MAPY += DISPLAY_HEIGHT;
       CURSORY = DISPLAY_HEIGHT/2;
+      CURSORX =  (DISPLAY_WIDTH - 48)/2;
       moveMap();
       redrawCursor(ILI9341_RED);
     }
