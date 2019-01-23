@@ -185,22 +185,24 @@ void processJoystick() {
     redrawCursor(ILI9341_RED);
     Serial.println(CURSORX);
 
-    if (CURSORX <= CURSOR_SIZE/2) {
+    if (CURSORX <= CURSOR_SIZE/2 && MAPX != 0) {
       MAPX -= DISPLAY_WIDTH - 48;
       checkMap();
       moveMap();
       redrawCursor(ILI9341_RED);
-    } else if (CURSORX >= (DISPLAY_WIDTH - 48 - CURSOR_SIZE/2 - 1)) {
+    } else if (CURSORX >= (DISPLAY_WIDTH - 48 - CURSOR_SIZE/2 - 1) &&
+               MAPX != YEG_SIZE - DISPLAY_WIDTH - 48) {
       MAPX += DISPLAY_WIDTH - 48;
       checkMap();
       moveMap();
       redrawCursor(ILI9341_RED);
-    } else if (CURSORY <= CURSOR_SIZE/2) {
+    } else if (CURSORY <= CURSOR_SIZE/2 && MAPY != 0) {
       MAPY -= DISPLAY_HEIGHT;
       checkMap();
       moveMap();
       redrawCursor(ILI9341_RED);
-    } else if (CURSORY >= (DISPLAY_HEIGHT - CURSOR_SIZE/2)) {
+    } else if (CURSORY >= (DISPLAY_HEIGHT - CURSOR_SIZE/2) &&
+               MAPY != YEG_SIZE - DISPLAY_HEIGHT) {
       MAPY += DISPLAY_HEIGHT;
       checkMap();
       moveMap();
