@@ -1,13 +1,3 @@
-/*
-Kaden Dreger
-1528632
-cmput275
-Weekly Assignment 1
-Display and Joystick
-
-  This file is used to create and move a cursor on the screen
-  using a joystick that is wired to the arduino.
-*/
 // Importing libraries
 #include <Arduino.h>
 #include <SPI.h>
@@ -38,19 +28,16 @@ lcd_image_t yegImage = { "yeg-big.lcd", YEG_SIZE, YEG_SIZE };
 #define CURSOR_SIZE 9
 
 // the cursor position on the display
-int CURSORX, CURSORY;
+int CURSORX = (DISPLAY_WIDTH - 48)/2;
+int CURSORY = DISPLAY_HEIGHT/2;
 int MAPX = YEG_SIZE/2 - (DISPLAY_WIDTH - 48)/2;
 int MAPY = YEG_SIZE/2 - DISPLAY_HEIGHT/2;
 
 
-void moveMap() {
-  lcd_image_draw(&yegImage, &tft, MAPX, MAPY,
-                 0, 0, DISPLAY_WIDTH - 48, DISPLAY_HEIGHT);
-}
-
 
 // forward declaration for redrawing the cursor
 void redrawCursor(uint16_t colour);
+void moveMap();
 
 void setup() {
   /*  The point of this function is to initialize the arduino and set the
@@ -88,12 +75,9 @@ void setup() {
   // leaving the rightmost 48 columns black
   moveMap();
 
-  // initial cursor position is the middle of the screen
-  CURSORX = (DISPLAY_WIDTH - 48)/2;
-  CURSORY = DISPLAY_HEIGHT/2;
-
   redrawCursor(ILI9341_RED);  // Draws the cursor to the screen
 }
+
 
 void redrawMap()  {
   /*  The point of this function is to redraw only the part of
@@ -127,6 +111,12 @@ void redrawCursor(uint16_t colour) {
   // Drawing the cursor
   tft.fillRect(CURSORX - CURSOR_SIZE/2, CURSORY - CURSOR_SIZE/2,
                CURSOR_SIZE, CURSOR_SIZE, colour);
+}
+
+void moveMap() {
+  lcd_image_draw(&yegImage, &tft, MAPX, MAPY,
+                 0, 0, DISPLAY_WIDTH - 48, DISPLAY_HEIGHT);
+  //redrawCursor(ILI9341_RED);
 }
 
 void processJoystick() {
@@ -185,24 +175,26 @@ void processJoystick() {
 
     if (CURSORX <= CURSOR_SIZE/2) {
       MAPX -= DISPLAY_WIDTH - 48;
-      CURSORX =  DISPLAY_WIDTH - 48 - CURSOR_SIZE/2 - 1;
+      CURSORX =  (DISPLAY_WIDTH - 48)/2;
       moveMap();
+      redrawCursor(ILI9341_RED);
     } else if (CURSORX >= (DISPLAY_WIDTH - 48 - CURSOR_SIZE/2 - 1)) {
       MAPX += DISPLAY_WIDTH - 48;
-      CURSORX = CURSOR_SIZE/2;
+      CURSORX = (DISPLAY_WIDTH - 48)/2;
       moveMap();
+      redrawCursor(ILI9341_RED);
     } else if (CURSORY <= CURSOR_SIZE/2) {
       MAPY -= DISPLAY_HEIGHT;
-      CURSORY = DISPLAY_HEIGHT - CURSOR_SIZE/2 - 1;
+      CURSORY = DISPLAY_HEIGHT/2;
       moveMap();
+      redrawCursor(ILI9341_RED);
     } else if (CURSORY >= (DISPLAY_HEIGHT - CURSOR_SIZE/2)) {
       MAPY += DISPLAY_HEIGHT;
-      CURSORY = CURSOR_SIZE/2;
+      CURSORY = DISPLAY_HEIGHT/2;
       moveMap();
+      redrawCursor(ILI9341_RED);
     }
   }
-
-
   delay(20);
 }
 
