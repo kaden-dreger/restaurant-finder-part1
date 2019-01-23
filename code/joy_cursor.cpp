@@ -191,6 +191,14 @@ void processJoystick() {
       MAPX += DISPLAY_WIDTH - 48;
       CURSORX = CURSOR_SIZE/2;
       moveMap();
+    } else if (CURSORY <= CURSOR_SIZE/2) {
+      MAPY -= DISPLAY_HEIGHT;
+      CURSORY = DISPLAY_HEIGHT - CURSOR_SIZE/2 - 1;
+      moveMap();
+    } else if (CURSORY >= (DISPLAY_HEIGHT - CURSOR_SIZE/2)) {
+      MAPY += DISPLAY_HEIGHT;
+      CURSORY = CURSOR_SIZE/2;
+      moveMap();
     }
   }
 
