@@ -191,14 +191,17 @@ uint16_t  dist;   //  Manhatten  distance  to  cursor  position
 };
 RestDist restDist[NUM_RESTAURANTS];
 
-void fetchRests() {
-    tft.fillScreen (0);
+void fetchRests(int mode) {
+    //tft.fillScreen (0);
     tft.setCursor(0, 0); //  where  the  characters  will be  displayed
     tft.setTextWrap(false);
     int selectedRest = 0; //  which  restaurant  is  selected?
     for (int16_t i = 0; i < 30; i++) {
         restaurant r;
-        getRestaurant(restDist[i].index , &r);
+        if (mode) {
+            getRestaurant(restDist[i].index, &r);
+            //Serial.println(r.name);
+        }
         if (i !=  selectedRest) { // not  highlighted
             //  white  characters  on  black  background
             tft.setTextColor (0xFFFF , 0x0000);
@@ -206,6 +209,9 @@ void fetchRests() {
             //  black  characters  on  white  background
             tft.setTextColor (0x0000 , 0xFFFF);
         }
+        Serial.println(restDist[i].index);
+        //Serial.println(restDist[i].index);
+
         tft.print(r.name);
         tft.print("\n");
     }
@@ -215,15 +221,17 @@ void fetchRests() {
 
 
 void restaurantList() {
+    tft.fillScreen (0);
     int joyClick;
     //tft.fillScreen(ILI9341_BLACK);
     delay(500);  // to allow the stick to become unpressed
+    fetchRests(1);
     while (true) {
         joyClick = digitalRead(JOY_SEL);
         if (not joyClick) {
             break;
         }
-        fetchRests();
+        fetchRests(0);
     }
     moveMap();
     redrawCursor(ILI9341_RED);
