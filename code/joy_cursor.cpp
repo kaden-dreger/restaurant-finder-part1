@@ -207,8 +207,8 @@ void fetchRests() {
 
 void restaurantList() {
     int joyClick;
-    tft.fillScreen(ILI9341_BLACK);
-    delay(1000);  // to allow the stick to become unpressed
+    //tft.fillScreen(ILI9341_BLACK);
+    delay(500);  // to allow the stick to become unpressed
     while (true) {
         joyClick = digitalRead(JOY_SEL);
         if (not joyClick) {
