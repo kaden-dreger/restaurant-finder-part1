@@ -65,12 +65,21 @@ void setup() {
 
 	tft.begin();
 
-	Serial.print("Initializing SD card...");
+	Serial.println("Initializing SD card...");
 	if (!SD.begin(SD_CS)) {
 		Serial.println("failed! Is it inserted properly?");
 		while (true) {}
-	}
-	Serial.println("OK!");
+	} else {
+        Serial.println("OK!");
+    }
+    Serial.println("Initializing SPI communication for raw reads...");
+    if (!card.init(SPI_HALF_SPEED, SD_CS)) {
+        Serial.println("failed! Is the card inserted properly?");
+    while (true) {}
+    } else {
+    Serial.println("OK!");
+    }
+	//Serial.println("OK!");
 
 	tft.setRotation(3);  // Sets the proper orientation of the display
 
