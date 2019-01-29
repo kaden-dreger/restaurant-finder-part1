@@ -20,4 +20,5 @@ build-mega2560/joy_cursor.o: joy_cursor.cpp \
  /usr/share/arduino/libraries/SD/utility/SdFatUtil.h \
  /home/cmput274/arduino-ua/libraries/Adafruit_ILI9341/Adafruit_ILI9341.h \
  /home/cmput274/arduino-ua/libraries/Adafruit_GFX/Adafruit_GFX.h \
- /home/cmput274/arduino-ua/libraries/Adafruit_GFX/gfxfont.h lcd_image.h
+ /home/cmput274/arduino-ua/libraries/Adafruit_GFX/gfxfont.h lcd_image.h \
+ /home/cmput274/arduino-ua/libraries/TouchScreen/TouchScreen.h

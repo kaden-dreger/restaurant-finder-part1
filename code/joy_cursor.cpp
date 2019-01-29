@@ -4,6 +4,7 @@
 #include <SD.h>
 #include <Adafruit_ILI9341.h>
 #include "lcd_image.h"
+#include <TouchScreen.h>
 
 // Defining some global variables
 #define TFT_DC 9
@@ -11,6 +12,7 @@
 #define SD_CS 6
 
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
+Sd2Card card;
 
 #define DISPLAY_WIDTH  320
 #define DISPLAY_HEIGHT 240
@@ -21,6 +23,9 @@ lcd_image_t yegImage = { "yeg-big.lcd", YEG_SIZE, YEG_SIZE };
 #define JOY_VERT  A1  // should connect A1 to pin VRx
 #define JOY_HORIZ A0  // should connect A0 to pin VRy
 #define JOY_SEL   2
+
+#define REST_START_BLOCK 4000000
+#define NUM_RESTAURANTS 1066
 
 #define JOY_CENTER   512
 #define JOY_DEADZONE 64
@@ -78,6 +83,47 @@ void setup() {
   redrawCursor(ILI9341_RED);  // Draws the cursor to the screen
 }
 
+struct restaurant {
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+The restaurant struct is responsible for holding all the data for the restaur-
+ants such as latitude (lat), longitude (lon), name, and their rating.
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+  int32_t lat;
+  int32_t lon;
+  uint8_t rating;  // from 0 to 10
+  char name[55];
+};
+
+
+void getRestaurant(int restIndex, restaurant* restPtr) {
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+The getRestaurantFast function takes in the paramaters:
+        restIndex: the current index of the restaurant block
+        restPtr  : a pointer to the restaurant block
+
+It does not return any parameters.
+
+This function is responsible for raw reading from the SD card in an efficient
+manner, only reading from the SD card when we have exceeded a restIndex of 8,
+indicating we have read in all 8 restaurants from the current block. 
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+    /* The fast implementation consists of a simple if statement checking if
+    the restIndex is has exceeded a "multiple of 8" meaning the pointer is now
+    past the current block we are reading.
+    */
+    if ((restIndex % 8) == 0) {
+        uint32_t blockNum = REST_START_BLOCK + restIndex/8;
+        restaurant restBlock[8];  // creating an array of structs
+
+        while (!card.readBlock(blockNum, (uint8_t*) restBlock)) {  // raw read
+        Serial.println("Read block failed, trying again.");  // from the SD card
+        }
+
+        *restPtr = restBlock[restIndex % 8];
+    }
+}
+
+
 
 void redrawMap()  {
   /*  The point of this function is to redraw only the part of
@@ -130,6 +176,50 @@ void checkMap() {
       YEG_SIZE - DISPLAY_HEIGHT);
 }
 
+struct  RestDist {
+uint16_t  index; // index  of  restaurant  from 0 to  NUM_RESTAURANTS -1
+uint16_t  dist;   //  Manhatten  distance  to  cursor  position
+};
+RestDist restDist[NUM_RESTAURANTS];
+
+void fetchRests() {
+    tft.fillScreen (0);
+    tft.setCursor(0, 0); //  where  the  characters  will be  displayed
+    tft.setTextWrap(false);
+    int selectedRest = 0; //  which  restaurant  is  selected?
+    for (int16_t i = 0; i < 30; i++) {
+        restaurant r;
+        getRestaurant(restDist[i].index , &r);
+        if (i !=  selectedRest) { // not  highlighted
+            //  white  characters  on  black  background
+            tft.setTextColor (0xFFFF , 0x0000);
+        } else { //  highlighted
+            //  black  characters  on  white  background
+            tft.setTextColor (0x0000 , 0xFFFF);
+        }
+        tft.print(r.name);
+        tft.print("\n");
+    }
+    tft.print("\n");
+
+}
+
+
+void restaurantList() {
+    int joyClick;
+    tft.fillScreen(ILI9341_BLACK);
+    delay(1000);  // to allow the stick to become unpressed
+    while (true) {
+        joyClick = digitalRead(JOY_SEL);
+        if (not joyClick) {
+            break;
+        }
+        fetchRests();
+    }
+    moveMap();
+    redrawCursor(ILI9341_RED);
+}
+
 void processJoystick() {
   /*  The point of this function is to use the joystick to move the cursor without
   having the cursor leave a black trail, go off screen, not flicker will not moving,
@@ -144,8 +234,15 @@ void processJoystick() {
   // This takes in the analog values of the joystick
   int xVal = analogRead(JOY_HORIZ);
   int yVal = analogRead(JOY_VERT);
-  int buttonVal = digitalRead(JOY_SEL);
+  int joyClick = digitalRead(JOY_SEL);
 
+  //Serial.println(joyClick);
+
+  if (not joyClick) {
+    // run a function (function has to be in a while loop)
+    Serial.println("joystick clicked");
+    restaurantList();
+  }
   // This check if the joystick has been moved
   if (yVal < JOY_CENTER - JOY_DEADZONE || yVal > JOY_CENTER + JOY_DEADZONE
     || xVal < JOY_CENTER - JOY_DEADZONE || xVal > JOY_CENTER + JOY_DEADZONE) {
@@ -183,7 +280,7 @@ void processJoystick() {
 
     // Draw a red square at the new position
     redrawCursor(ILI9341_RED);
-    Serial.println(CURSORX);
+    //Serial.println(CURSORX);
 
     if (CURSORX <= CURSOR_SIZE/2 && MAPX != 0) {
       MAPX -= DISPLAY_WIDTH - 48;
