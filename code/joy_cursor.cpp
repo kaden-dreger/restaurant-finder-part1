@@ -78,6 +78,7 @@ void setup() {
     while (true) {}
     } else {
     Serial.println("OK!");
+    Serial.println("---------------------------------------------------------");
     }
 	//Serial.println("OK!");
 
@@ -120,7 +121,7 @@ indicating we have read in all 8 restaurants from the current block.
     the restIndex is has exceeded a "multiple of 8" meaning the pointer is now
     past the current block we are reading.
     */
-    if ((restIndex % 8) == 0) {
+    //if ((restIndex % 8) == 0) {
         uint32_t blockNum = REST_START_BLOCK + restIndex/8;
         restaurant restBlock[8];  // creating an array of structs
 
@@ -129,7 +130,7 @@ indicating we have read in all 8 restaurants from the current block.
         }
 
         *restPtr = restBlock[restIndex % 8];
-    }
+    //ssss}
 }
 
 
@@ -191,17 +192,25 @@ uint16_t  dist;   //  Manhatten  distance  to  cursor  position
 };
 RestDist restDist[NUM_RESTAURANTS];
 
-void fetchRests(int mode) {
+void fetchRests() {
     //tft.fillScreen (0);
     tft.setCursor(0, 0); //  where  the  characters  will be  displayed
     tft.setTextWrap(false);
     int selectedRest = 0; //  which  restaurant  is  selected?
+    Serial.println("Restaurants read in...");
     for (int16_t i = 0; i < 30; i++) {
+        /*Only reads the first 30 restaurants... using the slow read method,
+        fast read gives copies of 8 of the same restaurant, not sure if it reads
+        all of them or not...*/
         restaurant r;
-        if (mode) {
-            getRestaurant(restDist[i].index, &r);
-            //Serial.println(r.name);
-        }
+        getRestaurant(i, &r);
+        Serial.println(r.name);
+        Serial.print("latitude: ");
+        Serial.print(r.lat);
+        Serial.print(" longitude: ");
+        Serial.print(r.lon);
+        Serial.println();
+        Serial.println();
         if (i !=  selectedRest) { // not  highlighted
             //  white  characters  on  black  background
             tft.setTextColor (0xFFFF , 0x0000);
@@ -209,7 +218,7 @@ void fetchRests(int mode) {
             //  black  characters  on  white  background
             tft.setTextColor (0x0000 , 0xFFFF);
         }
-        Serial.println(restDist[i].index);
+        //Serial.println(restDist[i].index);
         //Serial.println(restDist[i].index);
 
         tft.print(r.name);
@@ -225,13 +234,13 @@ void restaurantList() {
     int joyClick;
     //tft.fillScreen(ILI9341_BLACK);
     delay(500);  // to allow the stick to become unpressed
-    fetchRests(1);
+    fetchRests();
     while (true) {
         joyClick = digitalRead(JOY_SEL);
         if (not joyClick) {
             break;
         }
-        fetchRests(0);
+        //fetchRests(0);
     }
     moveMap();
     redrawCursor(ILI9341_RED);
@@ -257,7 +266,6 @@ void processJoystick() {
 
   if (not joyClick) {
     // run a function (function has to be in a while loop)
-    Serial.println("joystick clicked");
     restaurantList();
   }
   // This check if the joystick has been moved
