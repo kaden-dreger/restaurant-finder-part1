@@ -247,15 +247,6 @@ void fetchRests() {
         int16_t restY = lat_to_y(r.lat);
         int16_t restX = lon_to_x(r.lon);
         restDist[i].dist = abs((MAPX + CURSORX)-restX) + abs((MAPY + CURSORY) - restY);
-        /*
-        Serial.println(r.name);
-        Serial.print("latitude: ");
-        Serial.print(r.lat);
-        Serial.print(" longitude: ");
-        Serial.print(r.lon);
-        Serial.println();
-        Serial.println();
-        */
     }
     // Insertion sort
     insertionSort(&restDist[0]);
@@ -271,6 +262,13 @@ void fetchRests() {
         }
         tft.print(r.name);
         tft.print("\n");
+        Serial.println(r.name);
+        Serial.print("latitude: ");
+        Serial.print(r.lat);
+        Serial.print(" longitude: ");
+        Serial.print(r.lon);
+        Serial.println();
+        Serial.println();
     }
     tft.print("\n");
 }
