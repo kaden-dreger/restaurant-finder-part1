@@ -47,7 +47,7 @@ int MAPY = YEG_SIZE/2 - DISPLAY_HEIGHT/2;
 
 //restaurant restBlock[8];  // creating an array of structs
 uint32_t nowBlock;
-
+char* nameArray[30];
 
 // The initial selected restraunt
 uint16_t selectedRest = 0;
@@ -260,6 +260,7 @@ void fetchRests() {
             //  black  characters  on  white  background
             tft.setTextColor (0x0000 , 0xFFFF);
         }
+        nameArray[j] = r.name;
         tft.print(r.name);
         tft.print("\n");
         Serial.println(r.name);
@@ -286,7 +287,7 @@ void drawName(uint16_t index) {
   else {
     tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
   }
-  // tft.println(// arrray[i]);
+  tft.println(nameArray[index]);
 }
 
 
@@ -302,7 +303,7 @@ void restaurantList() {
       if (not joyClick) {
           break;
       }
-      delay(1000);
+      delay(50);
       uint16_t prevHighlight = selectedRest;
       
       // Working time:
@@ -311,15 +312,17 @@ void restaurantList() {
 
       if (yVal < JOY_CENTER - JOY_DEADZONE) {
         selectedRest -= 1;  // decrease the y coordinate of the cursor
-        selectedRest = constrain(selectedRest, 0, NUM_RESTAURANTS);
-        drawName(prevHighlight);
-        drawName(selectedRest);
+        //if (selectedRest < 0) {
+            //selectedRest = 0;
+        //}
       } else if (yVal > JOY_CENTER + JOY_DEADZONE) {
         selectedRest += 1;
-        selectedRest = constrain(selectedRest, 0, NUM_RESTAURANTS);
+      }
+      /*issue where it loops back if we go off the screen on the top...*/
+      selectedRest = constrain(selectedRest, 0, 29);  
+      Serial.println(selectedRest);
         drawName(prevHighlight);
         drawName(selectedRest);
-      }
     }
     moveMap();
     redrawCursor(ILI9341_RED);
