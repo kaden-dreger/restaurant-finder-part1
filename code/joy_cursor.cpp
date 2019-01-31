@@ -32,6 +32,13 @@ lcd_image_t yegImage = { "yeg-big.lcd", YEG_SIZE, YEG_SIZE };
 
 #define CURSOR_SIZE 9
 
+#define  MAP_WIDTH  2048
+#define  MAP_HEIGHT  2048
+#define  LAT_NORTH  5361858l
+#define  LAT_SOUTH  5340953l
+#define  LON_WEST  -11368652l
+#define  LON_EAST  -11333496l
+
 // the cursor position on the display
 int CURSORX = (DISPLAY_WIDTH - 48)/2;
 int CURSORY = DISPLAY_HEIGHT/2;
@@ -42,6 +49,8 @@ int MAPY = YEG_SIZE/2 - DISPLAY_HEIGHT/2;
 uint32_t nowBlock;
 
 
+// The initial selected restraunt
+uint16_t selectedRest = 0;
 // forward declaration for redrawing the cursor
 void redrawCursor(uint16_t colour);
 void moveMap();
@@ -106,6 +115,16 @@ ants such as latitude (lat), longitude (lon), name, and their rating.
   char name[55];
 } restBlock[8];
 
+restaurant r;
+
+
+int16_t  lon_to_x(int32_t  lon) {
+  return  map(lon , LON_WEST , LON_EAST , 0, MAP_WIDTH);
+}
+int16_t  lat_to_y(int32_t  lat) {
+  return  map(lat , LAT_NORTH , LAT_SOUTH , 0, MAP_HEIGHT);
+}
+
 
 void getRestaurant(int restIndex, restaurant* restPtr) {
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -136,7 +155,6 @@ indicating we have read in all 8 restaurants from the current block.
 
         *restPtr = restBlock[restIndex % 8];
     }
-    //ssss}
 }
 
 
@@ -151,9 +169,6 @@ void redrawMap()  {
     Returns:
         This function returns nothing.
   */
-  // Setting the middle of the map to the top left of the screen.
-  //int yegMiddleX = YEG_SIZE/2 - (DISPLAY_WIDTH - 48)/2;
-  //int yegMiddleY = YEG_SIZE/2 - DISPLAY_HEIGHT/2;
   // Drawing the map at the last location of the cursor.
   lcd_image_draw(&yegImage, &tft, MAPX + (CURSORX - CURSOR_SIZE/2),
     MAPY + (CURSORY - CURSOR_SIZE/2), CURSORX - CURSOR_SIZE/2,
@@ -198,18 +213,41 @@ uint16_t  dist;   //  Manhatten  distance  to  cursor  position
 };
 RestDist restDist[NUM_RESTAURANTS];
 
+
+void insertionSort(RestDist *array) {
+    int i = 1;
+    int j;
+    RestDist temp;
+    while (i < NUM_RESTAURANTS) {
+        j = i;
+        while (j > 0 && array[j - 1].dist > array[j].dist) {
+            //find the citation for the temp swap...
+            temp = array[j];
+            array[j] = array[j - 1];
+            array[j-1] = temp;
+            j--;
+        }
+        i++;
+    } 
+
+}
+
 void fetchRests() {
     //tft.fillScreen (0);
     tft.setCursor(0, 0); //  where  the  characters  will be  displayed
     tft.setTextWrap(false);
     int selectedRest = 0;
     Serial.println("Restaurants read in...");
-    for (int16_t i = 0; i < 30; i++) {
+    for (int16_t i = 0; i < NUM_RESTAURANTS; i++) {
+      restDist[i].index = i;
         /*Only reads the first 30 restaurants... using the slow read method,
         fast read gives copies of 8 of the same restaurant, not sure if it reads
         all of them or not...*/
-        restaurant r;
         getRestaurant(i, &r);
+        int16_t restY = lat_to_y(r.lat);
+        int16_t restX = lon_to_x(r.lon);
+        restDist[i].dist = abs((MAPX + CURSORX)-restX) + abs((MAPY + CURSORY) - restY);
+        /*
         Serial.println(r.name);
         Serial.print("latitude: ");
         Serial.print(r.lat);
@@ -217,7 +255,14 @@ void fetchRests() {
         Serial.print(r.lon);
         Serial.println();
         Serial.println();
-        if (i !=  selectedRest) { // not  highlighted
+        */
+    }
+    // Insertion sort
+    insertionSort(&restDist[0]);
+
+    for (int16_t j = 0; j < 30; j++) {
+        getRestaurant(restDist[j].index, &r);
+        if (j !=  selectedRest) { // not  highlighted
             //  white  characters  on  black  background
             tft.setTextColor (0xFFFF , 0x0000);
         } else { //  highlighted
@@ -228,33 +273,28 @@ void fetchRests() {
         tft.print("\n");
     }
     tft.print("\n");
-
 }
 
-void redrawText(int selectedRest, bool increase) {
-    if (increase) {
-      restaurant r;
-      tft.setCursor(0, selectedRest*10);
-      tft.setTextColor (0xFFFF , 0x0000);
-      tft.setCursor(0, selectedRest+1*10);
-      tft.setTextColor (0x0000 , 0xFFFF);
-      tft.print(r.name);
-    } else {
-      restaurant r;
-      tft.setCursor(0, selectedRest*10);
-      tft.setTextColor (0x0000 , 0xFFFF);
-      tft.print(r.name);
-      tft.setCursor(0, selectedRest+1*10);
-      tft.setTextColor (0xFFFF , 0x0000);
-      tft.print(r.name);
-    }
+// This is from displayNames
+// draws the name at the given index to the display
+// assumes the text size is already 2, that text
+// is not wrapping, and 0 <= index < number of names in the list
+void drawName(uint16_t index) {
+  tft.setCursor(0, index*8);
+
+  if (index == selectedRest) {
+    tft.setTextColor(ILI9341_BLACK, ILI9341_WHITE);
+  }
+  else {
+    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+  }
+  // tft.println(// arrray[i]);
 }
 
 
 void restaurantList() {
     tft.fillScreen (0);
-    int joyClick, xVal, yVal, selectedRest;
-    selectedRest = 0;
+    int joyClick, xVal, yVal;
     delay(500);  // to allow the stick to become unpressed
     fetchRests();
     while (true) {
@@ -264,15 +304,23 @@ void restaurantList() {
       if (not joyClick) {
           break;
       }
-      delay(500);
+      delay(1000);
+      uint16_t prevHighlight = selectedRest;
+      
+      // Working time:
+      //  - Add more names than can be displayed on one screen, and
+      //    go to the "next page" of names if you select far enough down
+
       if (yVal < JOY_CENTER - JOY_DEADZONE) {
         selectedRest -= 1;  // decrease the y coordinate of the cursor
         selectedRest = constrain(selectedRest, 0, NUM_RESTAURANTS);
-        redrawText(selectedRest, false);
+        drawName(prevHighlight);
+        drawName(selectedRest);
       } else if (yVal > JOY_CENTER + JOY_DEADZONE) {
         selectedRest += 1;
         selectedRest = constrain(selectedRest, 0, NUM_RESTAURANTS);
-        redrawText(selectedRest, true);
+        drawName(prevHighlight);
+        drawName(selectedRest);
       }
     }
     moveMap();
@@ -295,7 +343,6 @@ void processJoystick() {
   int yVal = analogRead(JOY_VERT);
   int joyClick = digitalRead(JOY_SEL);
 
-  //Serial.println(joyClick);
 
   if (not joyClick) {
     // run a function (function has to be in a while loop)
