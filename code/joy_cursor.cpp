@@ -261,9 +261,10 @@ void fetchRests() {
             tft.setTextColor (0x0000 , 0xFFFF);
         }
         nameArray[j] = r.name;
+        Serial.println(nameArray[j]);
         tft.print(r.name);
         tft.print("\n");
-        Serial.println(r.name);
+        //Serial.println(r.name);
         Serial.print("latitude: ");
         Serial.print(r.lat);
         Serial.print(" longitude: ");
@@ -280,7 +281,7 @@ void fetchRests() {
 // is not wrapping, and 0 <= index < number of names in the list
 void drawName(uint16_t index) {
   tft.setCursor(0, index*8);
-
+  tft.fillRect(0, index*8, DISPLAY_WIDTH, 8, tft.color565(0, 0, 0));
   if (index == selectedRest) {
     tft.setTextColor(ILI9341_BLACK, ILI9341_WHITE);
   }
@@ -315,15 +316,17 @@ void restaurantList() {
         //if (selectedRest < 0) {
             //selectedRest = 0;
         //}
-      } else if (yVal > JOY_CENTER + JOY_DEADZONE) {
-        selectedRest += 1;
-      }
-      /*issue where it loops back if we go off the screen on the top...*/
-      selectedRest = constrain(selectedRest, 0, 29);  
-      Serial.println(selectedRest);
+        selectedRest = constrain(selectedRest, 0, 29);  
         drawName(prevHighlight);
         drawName(selectedRest);
+      } else if (yVal > JOY_CENTER + JOY_DEADZONE) {
+        selectedRest += 1;
+        selectedRest = constrain(selectedRest, 0, 29);  
+        drawName(prevHighlight);
+        drawName(selectedRest);
+      }
     }
+      /*issue where it loops back if we go off the screen on the top...*/
     moveMap();
     redrawCursor(ILI9341_RED);
 }
