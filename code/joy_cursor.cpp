@@ -214,6 +214,24 @@ uint16_t  dist;   //  Manhatten  distance  to  cursor  position
 RestDist restDist[NUM_RESTAURANTS];
 
 
+void insertionSort(RestDist *array) {
+    int i = 1;
+    int j;
+    RestDist temp;
+    while (i < NUM_RESTAURANTS) {
+        j = i;
+        while (j > 0 && array[j - 1].dist > array[j].dist) {
+            //find the citation for the temp swap...
+            temp = array[j];
+            array[j] = array[j - 1];
+            array[j-1] = temp;
+            j--;
+        }
+        i++;
+    } 
+
+}
+
 void fetchRests() {
     //tft.fillScreen (0);
     tft.setCursor(0, 0); //  where  the  characters  will be  displayed
@@ -240,6 +258,8 @@ void fetchRests() {
         */
     }
     // Insertion sort
+    insertionSort(&restDist[0]);
+
     for (int16_t j = 0; j < 30; j++) {
         getRestaurant(restDist[j].index, &r);
         if (j !=  selectedRest) { // not  highlighted
