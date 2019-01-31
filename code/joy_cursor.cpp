@@ -289,6 +289,7 @@ void drawName(uint16_t index) {
     tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
   }
   tft.println(nameArray[index]);
+  Serial.println(*nameArray[0] - index);
 }
 
 
@@ -297,6 +298,7 @@ void restaurantList() {
     int joyClick, xVal, yVal;
     delay(500);  // to allow the stick to become unpressed
     fetchRests();
+    selectedRest = 0;
     while (true) {
       xVal = analogRead(JOY_HORIZ);
       yVal = analogRead(JOY_VERT);
