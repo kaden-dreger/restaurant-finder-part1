@@ -38,6 +38,8 @@ int CURSORY = DISPLAY_HEIGHT/2;
 int MAPX = YEG_SIZE/2 - (DISPLAY_WIDTH - 48)/2;
 int MAPY = YEG_SIZE/2 - DISPLAY_HEIGHT/2;
 
+//restaurant restBlock[8];  // creating an array of structs
+uint32_t nowBlock;
 
 
 // forward declaration for redrawing the cursor
@@ -61,15 +63,15 @@ void setup() {
 
   Serial.begin(9600);
 
-	pinMode(JOY_SEL, INPUT_PULLUP);
+  pinMode(JOY_SEL, INPUT_PULLUP);
 
-	tft.begin();
+  tft.begin();
 
-	Serial.println("Initializing SD card...");
-	if (!SD.begin(SD_CS)) {
-		Serial.println("failed! Is it inserted properly?");
-		while (true) {}
-	} else {
+  Serial.println("Initializing SD card...");
+  if (!SD.begin(SD_CS)) {
+    Serial.println("failed! Is it inserted properly?");
+    while (true) {}
+  } else {
         Serial.println("OK!");
     }
     Serial.println("Initializing SPI communication for raw reads...");
@@ -80,9 +82,9 @@ void setup() {
     Serial.println("OK!");
     Serial.println("---------------------------------------------------------");
     }
-	//Serial.println("OK!");
+  //Serial.println("OK!");
 
-	tft.setRotation(3);  // Sets the proper orientation of the display
+  tft.setRotation(3);  // Sets the proper orientation of the display
 
   tft.fillScreen(ILI9341_BLACK);
 
@@ -102,7 +104,7 @@ ants such as latitude (lat), longitude (lon), name, and their rating.
   int32_t lon;
   uint8_t rating;  // from 0 to 10
   char name[55];
-};
+} restBlock[8];
 
 
 void getRestaurant(int restIndex, restaurant* restPtr) {
@@ -122,14 +124,18 @@ indicating we have read in all 8 restaurants from the current block.
     past the current block we are reading.
     */
     //if ((restIndex % 8) == 0) {
-        uint32_t blockNum = REST_START_BLOCK + restIndex/8;
-        restaurant restBlock[8];  // creating an array of structs
+    uint32_t blockNum = REST_START_BLOCK + restIndex/8;
+    if (nowBlock == blockNum) {
+        *restPtr = restBlock[restIndex % 8];
+    } else {
+        nowBlock = blockNum;
 
         while (!card.readBlock(blockNum, (uint8_t*) restBlock)) {  // raw read
         Serial.println("Read block failed, trying again.");  // from the SD card
         }
 
         *restPtr = restBlock[restIndex % 8];
+    }
     //ssss}
 }
 
@@ -196,7 +202,7 @@ void fetchRests() {
     //tft.fillScreen (0);
     tft.setCursor(0, 0); //  where  the  characters  will be  displayed
     tft.setTextWrap(false);
-    int selectedRest = 0; //  which  restaurant  is  selected?
+    int selectedRest = 0;
     Serial.println("Restaurants read in...");
     for (int16_t i = 0; i < 30; i++) {
         /*Only reads the first 30 restaurants... using the slow read method,
@@ -218,9 +224,6 @@ void fetchRests() {
             //  black  characters  on  white  background
             tft.setTextColor (0x0000 , 0xFFFF);
         }
-        //Serial.println(restDist[i].index);
-        //Serial.println(restDist[i].index);
-
         tft.print(r.name);
         tft.print("\n");
     }
@@ -228,19 +231,49 @@ void fetchRests() {
 
 }
 
+void redrawText(int selectedRest, bool increase) {
+    if (increase) {
+      restaurant r;
+      tft.setCursor(0, selectedRest*10);
+      tft.setTextColor (0xFFFF , 0x0000);
+      tft.setCursor(0, selectedRest+1*10);
+      tft.setTextColor (0x0000 , 0xFFFF);
+      tft.print(r.name);
+    } else {
+      restaurant r;
+      tft.setCursor(0, selectedRest*10);
+      tft.setTextColor (0x0000 , 0xFFFF);
+      tft.print(r.name);
+      tft.setCursor(0, selectedRest+1*10);
+      tft.setTextColor (0xFFFF , 0x0000);
+      tft.print(r.name);
+    }
+}
+
 
 void restaurantList() {
     tft.fillScreen (0);
-    int joyClick;
-    //tft.fillScreen(ILI9341_BLACK);
+    int joyClick, xVal, yVal, selectedRest;
+    selectedRest = 0;
     delay(500);  // to allow the stick to become unpressed
     fetchRests();
     while (true) {
-        joyClick = digitalRead(JOY_SEL);
-        if (not joyClick) {
-            break;
-        }
-        //fetchRests(0);
+      xVal = analogRead(JOY_HORIZ);
+      yVal = analogRead(JOY_VERT);
+      joyClick = digitalRead(JOY_SEL);
+      if (not joyClick) {
+          break;
+      }
+      delay(500);
+      if (yVal < JOY_CENTER - JOY_DEADZONE) {
+        selectedRest -= 1;  // decrease the y coordinate of the cursor
+        selectedRest = constrain(selectedRest, 0, NUM_RESTAURANTS);
+        redrawText(selectedRest, false);
+      } else if (yVal > JOY_CENTER + JOY_DEADZONE) {
+        selectedRest += 1;
+        selectedRest = constrain(selectedRest, 0, NUM_RESTAURANTS);
+        redrawText(selectedRest, true);
+      }
     }
     moveMap();
     redrawCursor(ILI9341_RED);
@@ -343,12 +376,12 @@ int main() {
     Returns:
         This function returns nothing.
   */
-	setup();
+  setup();
 
   while (true) {
     processJoystick();
   }
 
-	Serial.end();
-	return 0;
+  Serial.end();
+  return 0;
 }
