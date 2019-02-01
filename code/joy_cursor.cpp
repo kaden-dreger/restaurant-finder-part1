@@ -345,6 +345,14 @@ void restaurantList() {
       yVal = analogRead(JOY_VERT);
       joyClick = digitalRead(JOY_SEL);
       if (not joyClick) {
+          restaurant rest;
+          getRestaurant(restDist[selectedRest].index, &rest);
+          CURSORY = lat_to_y(r.lat);
+          CURSORX = lon_to_x(r.lon);
+          MAPX = CURSORX - (DISPLAY_WIDTH - 48)/2;
+          MAPY = CURSORY - DISPLAY_HEIGHT/2;
+          redrawMap();
+          redrawCursor(ILI9341_RED);
           break;
       }
       delay(50);
@@ -382,7 +390,7 @@ void getTouch(){
     }
     // mapping to the screen, same implementation as we did in class
     int16_t touched_x = map(touch.y, TS_MINY, TS_MAXY, DISPLAY_WIDTH - 48, 0);
-    int16_t touched_y = map(touch.x, TS_MINX, TS_MAXX, 0, DISPLAY_HEIGHT - 1);
+    //int16_t touched_y = map(touch.x, TS_MINX, TS_MAXX, 0, DISPLAY_HEIGHT - 1);
         if (touched_x < DISPLAY_WIDTH - 48) {
             Serial.println("Screen touched!");
             drawCircles();
