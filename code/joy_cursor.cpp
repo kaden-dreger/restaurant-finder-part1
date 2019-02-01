@@ -344,17 +344,6 @@ void restaurantList() {
       xVal = analogRead(JOY_HORIZ);
       yVal = analogRead(JOY_VERT);
       joyClick = digitalRead(JOY_SEL);
-      if (not joyClick) {
-          restaurant rest;
-          getRestaurant(restDist[selectedRest].index, &rest);
-          CURSORY = lat_to_y(r.lat);
-          CURSORX = lon_to_x(r.lon);
-          MAPX = CURSORX - (DISPLAY_WIDTH - 48)/2;
-          MAPY = CURSORY - DISPLAY_HEIGHT/2;
-          redrawMap();
-          redrawCursor(ILI9341_RED);
-          break;
-      }
       delay(50);
       uint16_t prevHighlight = selectedRest;
       
@@ -375,6 +364,17 @@ void restaurantList() {
         selectedRest = constrain(selectedRest, 0, 29);  
         drawName(prevHighlight);
         drawName(selectedRest);
+      }
+      if (not joyClick) {
+          restaurant rest;
+          getRestaurant(restDist[selectedRest].index, &rest);
+          CURSORY = lat_to_y(rest.lat) + CURSOR_SIZE/2;
+          CURSORX = lon_to_x(rest.lon) + CURSOR_SIZE/2;
+          MAPX = CURSORX - (DISPLAY_WIDTH - 48)/2;
+          MAPY = CURSORY - DISPLAY_HEIGHT/2;
+          redrawMap();
+          redrawCursor(ILI9341_RED);
+          break;
       }
     }
       /*issue where it loops back if we go off the screen on the top...*/
