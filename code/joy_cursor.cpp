@@ -264,6 +264,7 @@ void fetchRests() {
         Serial.println(nameArray[j]);
         tft.print(r.name);
         tft.print("\n");
+
         //Serial.println(r.name);
         Serial.print("latitude: ");
         Serial.print(r.lat);
@@ -280,6 +281,8 @@ void fetchRests() {
 // assumes the text size is already 2, that text
 // is not wrapping, and 0 <= index < number of names in the list
 void drawName(uint16_t index) {
+    restaurant rest;
+    getRestaurant(restDist[index].index, &rest);
   tft.setCursor(0, index*8);
   tft.fillRect(0, index*8, DISPLAY_WIDTH, 8, tft.color565(0, 0, 0));
   if (index == selectedRest) {
@@ -288,15 +291,15 @@ void drawName(uint16_t index) {
   else {
     tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
   }
-  tft.println(nameArray[index]);
-  Serial.println(*nameArray[0] - index);
+  tft.println(rest.name);
+  //Serial.println(rest.name);
 }
 
 
 void restaurantList() {
     tft.fillScreen (0);
     int joyClick, xVal, yVal;
-    delay(500);  // to allow the stick to become unpressed
+    delay(100);  // to allow the stick to become unpressed
     fetchRests();
     selectedRest = 0;
     while (true) {
@@ -306,7 +309,7 @@ void restaurantList() {
       if (not joyClick) {
           break;
       }
-      delay(50);
+      delay(10);
       uint16_t prevHighlight = selectedRest;
       
       // Working time:
