@@ -24,8 +24,20 @@ lcd_image_t yegImage = { "yeg-big.lcd", YEG_SIZE, YEG_SIZE };
 #define JOY_HORIZ A0  // should connect A0 to pin VRy
 #define JOY_SEL   2
 
+#define YP A2  // must be an analog pin, use "An" notation!
+#define XM A3  // must be an analog pin, use "An" notation!
+#define YM  5  // can be a digital pin
+#define XP  4  // can be a digital pin
+
 #define REST_START_BLOCK 4000000
 #define NUM_RESTAURANTS 1066
+
+#define TS_MINX 150
+#define TS_MINY 120
+#define TS_MAXX 920
+#define TS_MAXY 940
+#define MINPRESSURE   10
+#define MAXPRESSURE 1000
 
 #define JOY_CENTER   512
 #define JOY_DEADZONE 64
@@ -39,6 +51,8 @@ lcd_image_t yegImage = { "yeg-big.lcd", YEG_SIZE, YEG_SIZE };
 #define  LON_WEST  -11368652l
 #define  LON_EAST  -11333496l
 
+
+TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 // the cursor position on the display
 int CURSORX = (DISPLAY_WIDTH - 48)/2;
 int CURSORY = DISPLAY_HEIGHT/2;
@@ -48,7 +62,8 @@ int MAPY = YEG_SIZE/2 - DISPLAY_HEIGHT/2;
 //restaurant restBlock[8];  // creating an array of structs
 uint32_t nowBlock;
 char* nameArray[30];
-
+int squareSize = 8;
+//bool touched = false;
 // The initial selected restraunt
 uint16_t selectedRest = 0;
 // forward declaration for redrawing the cursor
@@ -276,6 +291,29 @@ void fetchRests() {
     tft.print("\n");
 }
 
+void drawCircles() {
+    for (int16_t i = 0; i < NUM_RESTAURANTS; i++) {
+      restDist[i].index = i;
+        /*Only reads the first 30 restaurants... using the slow read method,
+        fast read gives copies of 8 of the same restaurant, not sure if it reads
+        all of them or not...*/
+        getRestaurant(i, &r);
+        int16_t restY = lat_to_y(r.lat);
+        int16_t restX = lon_to_x(r.lon);
+        // remember to subtract shapesize/2 from our boundaries...
+        if ((restX > MAPX + squareSize && restX < MAPX + DISPLAY_WIDTH - 48 -
+             squareSize) && (restY > MAPY + squareSize && restY < MAPY +
+              DISPLAY_HEIGHT - squareSize)) {
+            //Serial.println("maps read in");
+            /*
+            Serial.print("x: ");
+            Serial.print(restX);
+            Serial.println();
+            */
+            tft.fillRect(restX - MAPX, restY - MAPY, squareSize, squareSize, ILI9341_BLUE);
+        }
+    }
+}
 // This is from displayNames
 // draws the name at the given index to the display
 // assumes the text size is already 2, that text
@@ -309,7 +347,7 @@ void restaurantList() {
       if (not joyClick) {
           break;
       }
-      delay(10);
+      delay(50);
       uint16_t prevHighlight = selectedRest;
       
       // Working time:
@@ -336,6 +374,22 @@ void restaurantList() {
     redrawCursor(ILI9341_RED);
 }
 
+
+void getTouch(){
+      TSPoint touch = ts.getPoint();
+    if (touch.z < MINPRESSURE || touch.z > MAXPRESSURE) {
+        return;
+    }
+    // mapping to the screen, same implementation as we did in class
+    int16_t touched_x = map(touch.y, TS_MINY, TS_MAXY, DISPLAY_WIDTH - 48, 0);
+    int16_t touched_y = map(touch.x, TS_MINX, TS_MAXX, 0, DISPLAY_HEIGHT - 1);
+        if (touched_x < DISPLAY_WIDTH - 48) {
+            Serial.println("Screen touched!");
+            drawCircles();
+        }
+}
+
+
 void processJoystick() {
   /*  The point of this function is to use the joystick to move the cursor without
   having the cursor leave a black trail, go off screen, not flicker will not moving,
@@ -352,6 +406,7 @@ void processJoystick() {
   int yVal = analogRead(JOY_VERT);
   int joyClick = digitalRead(JOY_SEL);
 
+  getTouch();
 
   if (not joyClick) {
     // run a function (function has to be in a while loop)
