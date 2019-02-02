@@ -4,7 +4,7 @@ CMPUT 275 Winter 2019
 Assignment 1 Part 1: Restaurant Finder
 -------------------------------------------
 Included files:
-    * get_restaurant.cpp
+    * restaurant-finder1.cpp
     * Makefile
     * README
 
@@ -13,11 +13,12 @@ Required Components:
     * Adafruit display
     * SD Card (formatted correctly)
     * Handful of wires
+    * Joystick component
 
 Wiring Instructions:
 
-        ARDUINO PINS <--> DISPLAY PINS
-    -----------------------------------
+     ARDUINO PINS <--> DISPLAY PINS
+    --------------------------------
                  GND <--> GND
                   5V <--> Vin
                   52 <--> CLK
@@ -31,11 +32,19 @@ Wiring Instructions:
                   A3 <--> X-
                   6  <--> CCS
 
+       ARDUINO PINS <--> JOYSTICK
+    --------------------------------
+                 GND <--> GND
+                  5V <--> +5V
+                  A1 <--> VRx
+                  A0 <--> VRy
+                  2  <--> SW
+
 Running Instructions:
-    In order to correctly run the program, you must ensure your microSD card is formatted correctly and inserted correctly into the tft display. You must then call the program while being in the correct directory in terminal with the file 'get_restaurant.cpp' and use the command: 'make upload'. The program will then compile and upload to your Arduino and start running.
+    In order to correctly run the program, you must ensure your microSD card is formatted correctly and inserted correctly into the tft display. You must then call the program while being in the correct directory in terminal with the file 'restaurant-finder1.cpp' and use the command: 'make upload'. The program will then compile and upload to your Arduino and start running.
 
 How to use:
-    The program will display a simple GUI on the tft display. Simply touch the SLOW or FAST button to start benchmarking your desired implementation and see the data displayed on the screen.
+    The program will display a simple GUI on the tft display. Simply move the cursor around using the joystick to traverse the map. If you click the joystick, a list of the 30 closest restaurants should appear. From there, you may choose your favourite restaurant and click the joystick once more when it is highlighted. The display should show the map once more, but the cursor will be on the location of the selected map. Also, you may touch the screen to show the location of all the restaurants currently on your screen.
 
 Notes and Assumptions:
-    The function getRestaurant is the same version of the file shown in class. The program assumes that your SD card has been formatted properly, with the correct files ready to be accessed by this program. It also assumes that the user will not "overflow" the average count, which is when you press the button too many times (in one run through).
+    The functions lon_to_x and lat_to_y is the same version provided in the assignment description. The program assumes that your SD card has been formatted properly, with the correct files ready to be accessed by this program. When reading in the restaurants to see which ones are on the screen currently, we do a linear scan as it was unclear from the initial rubric.
