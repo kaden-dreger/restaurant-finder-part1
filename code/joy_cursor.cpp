@@ -61,7 +61,6 @@ int MAPY = YEG_SIZE/2 - DISPLAY_HEIGHT/2;
 
 //restaurant restBlock[8];  // creating an array of structs
 uint32_t nowBlock;
-char* nameArray[30];
 int squareSize = 8;
 //bool touched = false;
 // The initial selected restraunt
@@ -206,11 +205,29 @@ void redrawCursor(uint16_t colour) {
 }
 
 void moveMap() {
-  lcd_image_draw(&yegImage, &tft, MAPX, MAPY,
+    // NOT WORKING YET
+    lcd_image_draw(&yegImage, &tft, MAPX, MAPY,
                  0, 0, DISPLAY_WIDTH - 48, DISPLAY_HEIGHT);
-  CURSORY = DISPLAY_HEIGHT/2;
-  CURSORX =  (DISPLAY_WIDTH - 48)/2;
-  //redrawCursor(ILI9341_RED);
+    Serial.println(CURSORX);
+    if ((CURSORX > YEG_SIZE- DISPLAY_WIDTH/2 || CURSORX < 0 + DISPLAY_WIDTH/2) &&
+        (CURSORY > YEG_SIZE - DISPLAY_HEIGHT/2 || CURSORY < 0 + DISPLAY_HEIGHT/2)) {
+        CURSORY = constrain(CURSORY, 0 + CURSOR_SIZE/2,
+            DISPLAY_HEIGHT - CURSOR_SIZE/2);
+        CURSORX = constrain(CURSORX, 0 + CURSOR_SIZE/2,
+            DISPLAY_WIDTH-48 - CURSOR_SIZE/2);
+    } else if (CURSORX > YEG_SIZE- DISPLAY_WIDTH/2 || CURSORX < 0 + DISPLAY_WIDTH/2) {
+        CURSORX = constrain(CURSORX, 0 + CURSOR_SIZE/2,
+            DISPLAY_WIDTH-48 - CURSOR_SIZE/2);
+        CURSORY = DISPLAY_HEIGHT/2;
+    } else if (CURSORY > YEG_SIZE - DISPLAY_HEIGHT/2 || CURSORY < 0 + DISPLAY_HEIGHT/2) {
+        CURSORY = constrain(CURSORY, 0 + CURSOR_SIZE/2,
+            DISPLAY_HEIGHT - CURSOR_SIZE/2);
+        CURSORX = (DISPLAY_WIDTH - 48)/2;
+    }
+    else {
+        CURSORY = DISPLAY_HEIGHT/2;
+        CURSORX = (DISPLAY_WIDTH - 48)/2;
+    }
 }
 
 
@@ -275,8 +292,6 @@ void fetchRests() {
             //  black  characters  on  white  background
             tft.setTextColor (0x0000 , 0xFFFF);
         }
-        nameArray[j] = r.name;
-        Serial.println(nameArray[j]);
         tft.print(r.name);
         tft.print("\n");
 
@@ -304,12 +319,6 @@ void drawCircles() {
         if ((restX > MAPX + squareSize && restX < MAPX + DISPLAY_WIDTH - 48 -
              squareSize) && (restY > MAPY + squareSize && restY < MAPY +
               DISPLAY_HEIGHT - squareSize)) {
-            //Serial.println("maps read in");
-            /*
-            Serial.print("x: ");
-            Serial.print(restX);
-            Serial.println();
-            */
             tft.fillRect(restX - MAPX, restY - MAPY, squareSize, squareSize, ILI9341_BLUE);
         }
     }
@@ -330,7 +339,6 @@ void drawName(uint16_t index) {
     tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
   }
   tft.println(rest.name);
-  //Serial.println(rest.name);
 }
 
 
@@ -372,6 +380,7 @@ void restaurantList() {
           CURSORX = lon_to_x(rest.lon) + CURSOR_SIZE/2;
           MAPX = CURSORX - (DISPLAY_WIDTH - 48)/2;
           MAPY = CURSORY - DISPLAY_HEIGHT/2;
+          checkMap();
           redrawMap();
           redrawCursor(ILI9341_RED);
           break;
