@@ -81,7 +81,7 @@ int MAPX = YEG_SIZE/2 - (DISPLAY_WIDTH - 48)/2;
 int MAPY = YEG_SIZE/2 - DISPLAY_HEIGHT/2;
 
 uint32_t nowBlock;
-int squareSize = 8;
+int squareSize = 8;  // THe size of the dots after the screen is touched
 
 // The initial selected restraunt
 uint16_t selectedRest = 0;
@@ -124,18 +124,18 @@ void setup() {
     while (true) {}
     } else {
         Serial.println("OK!");
-        Serial.println("------------------------------------------------------");
+        Serial.println("-----------------------------------------------------");
     }
 
-  tft.setRotation(3);  // Sets the proper orientation of the display
+    tft.setRotation(3);  // Sets the proper orientation of the display
 
-  tft.fillScreen(ILI9341_BLACK);
+    tft.fillScreen(ILI9341_BLACK);
 
-  // draws the centre of the Edmonton map
-  // leaving the rightmost 48 columns black
-  moveMap();
+    // draws the centre of the Edmonton map
+    // leaving the rightmost 48 columns black
+    moveMap();
 
-  redrawCursor(ILI9341_RED);  // Draws the cursor to the screen
+    redrawCursor(ILI9341_RED);  // Draws the cursor to the screen
 }
 
 struct restaurant {
@@ -184,8 +184,7 @@ indicating we have read in all 8 restaurants from the current block.
     if (nowBlock == blockNum) {
         *restPtr = restBlock[restIndex % 8];
     } else {
-        nowBlock = blockNum;  //set the current block to the blockNum
-
+        nowBlock = blockNum;  // set the current block to the blockNum
         while (!card.readBlock(blockNum, (uint8_t*) restBlock)) {  // raw read
         Serial.println("Read block failed, trying again.");  // from the SD card
         }
@@ -198,25 +197,13 @@ indicating we have read in all 8 restaurants from the current block.
 
 void redrawMap()  {
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-The getRestaurant function takes in the paramaters:
-        restIndex: the current index of the restaurant block
-        restPtr  : a pointer to the restaurant block
+The redrawMap function takes no paramaters:
 
 It does not return any parameters.
 
-This function is responsible for raw reading from the SD card in an efficient
-manner, only reading from the SD card when we have exceeded a restIndex of 8,
-indicating we have read in all 8 restaurants from the current block. 
+The point of this function is to redraw only the part of
+the map where the cursor was before it moved.
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/*  The point of this function is to redraw only the part of
-    the map where the cursor was before it moved.
-
-    Arguments:
-        This function takes in no parameters.
-
-    Returns:
-        This function returns nothing.
-*/
     // Drawing the map at the last location of the cursor.
     lcd_image_draw(&yegImage, &tft, MAPX + (CURSORX - CURSOR_SIZE/2),
     MAPY + (CURSORY - CURSOR_SIZE/2), CURSORX - CURSOR_SIZE/2,
@@ -285,21 +272,26 @@ void checkMap() {
     Returns:
         This function returns nothing.
 */
-  MAPX = constrain(MAPX, 0,
-      YEG_SIZE - DISPLAY_WIDTH - 48);
+    MAPX = constrain(MAPX, 0,
+        YEG_SIZE - DISPLAY_WIDTH - 48);
 
-  MAPY = constrain(MAPY, 0,
-      YEG_SIZE - DISPLAY_HEIGHT);
+    MAPY = constrain(MAPY, 0,
+        YEG_SIZE - DISPLAY_HEIGHT);
 }
 
 struct  RestDist {
-uint16_t  index; // index  of  restaurant  from 0 to  NUM_RESTAURANTS -1
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+The RestDist struct is responsible for holding the index and manhattan distance
+for each of the restraunts.
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+uint16_t  index;  // index  of  restaurant  from 0 to  NUM_RESTAURANTS -1
 uint16_t  dist;   //  Manhatten  distance  to  cursor  position
 };
 RestDist restDist[NUM_RESTAURANTS];
 
 
 void iSort(RestDist *array) {
+// This is the implementaion of insertion sort given in class.
     int i = 1;
     int j;
     RestDist temp;
@@ -313,258 +305,286 @@ void iSort(RestDist *array) {
             j--;
         }
         i++;
-    } 
-
+    }
 }
 
 void fetchRests() {
-    //tft.fillScreen (0);
-    tft.setCursor(0, 0); //  where  the  characters  will be  displayed
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+The fetchRests function takes no paramaters:
+
+It does not return any parameters.
+
+The point of this function is to read in all the restraunts, sort them, and
+then list the closest 30 to the display.
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+    tft.setCursor(0, 0);  // where  the  characters  will be  displayed
     tft.setTextWrap(false);
     int selectedRest = 0;
+    // Reading in ALL the restaurants
     Serial.println("Restaurants read in...");
     for (int16_t i = 0; i < NUM_RESTAURANTS; i++) {
-      restDist[i].index = i;
-        /*Only reads the first 30 restaurants... using the slow read method,
-        fast read gives copies of 8 of the same restaurant, not sure if it reads
-        all of them or not...*/
+        restDist[i].index = i;  // Saving the index of each restaurant
         getRestaurant(i, &r);
+        // Getting the location of each restaurant
         int16_t restY = lat_to_y(r.lat);
         int16_t restX = lon_to_x(r.lon);
-        restDist[i].dist = abs((MAPX + CURSORX)-restX) + abs((MAPY + CURSORY) - restY);
+        // Calculating and saving the manhattan distances of each restaurant
+        restDist[i].dist = abs((MAPX + CURSORX)-restX) + abs((MAPY +
+            CURSORY) - restY);
     }
     // Insertion sort
     iSort(&restDist[0]);
 
+    // Reading in the closest 30 restaurants
     for (int16_t j = 0; j < 30; j++) {
         getRestaurant(restDist[j].index, &r);
-        if (j !=  selectedRest) { // not  highlighted
+        if (j !=  selectedRest) {  // not  highlighted
             //  white  characters  on  black  background
-            tft.setTextColor (0xFFFF , 0x0000);
-        } else { //  highlighted
+            tft.setTextColor(0xFFFF , 0x0000);
+        } else {  // highlighted
             //  black  characters  on  white  background
-            tft.setTextColor (0x0000 , 0xFFFF);
+            tft.setTextColor(0x0000 , 0xFFFF);
         }
-        tft.print(r.name);
+        tft.print(r.name);  // Printing each name to the display
         tft.print("\n");
-
-        //Serial.println(r.name);
-        Serial.print("latitude: ");
-        Serial.print(r.lat);
-        Serial.print(" longitude: ");
-        Serial.print(r.lon);
-        Serial.println();
-        Serial.println();
     }
     tft.print("\n");
 }
 
 void drawCircles() {
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+The drawCircles function takes no paramaters:
+
+It does not return any parameters.
+
+The point of this function is to draw the dots for each restaurant when the
+screen is touched.
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+    // Reading in the closest 30 restaurants.
     for (int16_t i = 0; i < NUM_RESTAURANTS; i++) {
       restDist[i].index = i;
-        /*Only reads the first 30 restaurants... using the slow read method,
-        fast read gives copies of 8 of the same restaurant, not sure if it reads
-        all of them or not...*/
         getRestaurant(i, &r);
         int16_t restY = lat_to_y(r.lat);
         int16_t restX = lon_to_x(r.lon);
-        // remember to subtract shapesize/2 from our boundaries...
+        // Checking if the restaurants are on the screen
         if ((restX > MAPX + squareSize && restX < MAPX + DISPLAY_WIDTH - 48 -
              squareSize) && (restY > MAPY + squareSize && restY < MAPY +
               DISPLAY_HEIGHT - squareSize)) {
-            tft.fillRect(restX - MAPX, restY - MAPY, squareSize, squareSize, ILI9341_BLUE);
+            // Drawing the dots
+            tft.fillRect(restX - MAPX, restY - MAPY, squareSize, squareSize,
+                ILI9341_BLUE);
         }
     }
 }
 
 
-// This is from the displayNames file shown in class. 
+// This is from the displayNames file shown in class.
 // It draws the name at the given index to the display,
 // assumes the text size is already 2, that text
 // is not wrapping, and 0 <= index < number of names in the list
 void drawName(uint16_t index) {
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+The drawName function takes one paramater:
+    index: This gets the index of the restaurant.
+
+It does not return any parameters.
+
+The point of this function is to scroll though the list of restaurant names
+according to which name is being highlighted. This is a given function from
+class.
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
     restaurant rest;
     getRestaurant(restDist[index].index, &rest);
-  tft.setCursor(0, index*8);
-  tft.fillRect(0, index*8, DISPLAY_WIDTH, 8, tft.color565(0, 0, 0));
-  if (index == selectedRest) {
-    tft.setTextColor(ILI9341_BLACK, ILI9341_WHITE);
-  }
-  else {
-    tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
-  }
-  tft.println(rest.name);
+    tft.setCursor(0, index*8);
+    tft.fillRect(0, index*8, DISPLAY_WIDTH, 8, tft.color565(0, 0, 0));
+    if (index == selectedRest) {
+        tft.setTextColor(ILI9341_BLACK, ILI9341_WHITE);
+    } else {
+        tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
+    }
+    tft.println(rest.name);
 }
 
 
 void restaurantList() {
-    tft.fillScreen (0);
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+The restaurantList function takes no paramaters:
+
+It does not return any parameters.
+
+The point of this function is to change the display screen from the map to
+the scrollable list of restaurant names. This also controls when the joystick
+is pressed putting the map and cursor at the selected restaurant.
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+    tft.fillScreen(0);
     int joyClick, xVal, yVal;
     delay(100);  // to allow the stick to become unpressed
     fetchRests();
-    selectedRest = 0;
+    selectedRest = 0;  // Setting the value of the initial restaurant
     while (true) {
-      xVal = analogRead(JOY_HORIZ);
-      yVal = analogRead(JOY_VERT);
-      joyClick = digitalRead(JOY_SEL);
-      delay(50);
-      uint16_t prevHighlight = selectedRest;
-      
-      // Working time:
-      //  - Add more names than can be displayed on one screen, and
-      //    go to the "next page" of names if you select far enough down
+        // Checking the input from the joystick
+        xVal = analogRead(JOY_HORIZ);
+        yVal = analogRead(JOY_VERT);
+        joyClick = digitalRead(JOY_SEL);
+        delay(50);  // Allowing for scrolling to be at a normal speed
+        uint16_t prevHighlight = selectedRest;
 
-      if (yVal < JOY_CENTER - JOY_DEADZONE) {
-        selectedRest -= 1;  // decrease the y coordinate of the cursor
-        //if (selectedRest < 0) {
-            //selectedRest = 0;
-        //}
-        selectedRest = constrain(selectedRest, 0, 29);  
-        drawName(prevHighlight);
-        drawName(selectedRest);
-      } else if (yVal > JOY_CENTER + JOY_DEADZONE) {
-        selectedRest += 1;
-        selectedRest = constrain(selectedRest, 0, 29);  
-        drawName(prevHighlight);
-        drawName(selectedRest);
-      }
-      if (not joyClick) {
-          restaurant rest;
-          getRestaurant(restDist[selectedRest].index, &rest);
-          CURSORY = lat_to_y(rest.lat) + CURSOR_SIZE/2;
-          CURSORX = lon_to_x(rest.lon) + CURSOR_SIZE/2;
-          MAPX = CURSORX - (DISPLAY_WIDTH - 48)/2;
-          MAPY = CURSORY - DISPLAY_HEIGHT/2;
-          checkMap();
-          redrawMap();
-          redrawCursor(ILI9341_RED);
-          break;
-      }
+        if (yVal < JOY_CENTER - JOY_DEADZONE) {
+            selectedRest -= 1;  // Go to the previous restaurant
+            selectedRest = constrain(selectedRest, 0, 29);
+            drawName(prevHighlight);
+            drawName(selectedRest);
+        } else if (yVal > JOY_CENTER + JOY_DEADZONE) {
+            selectedRest += 1;  // Go to the next restaurant
+            selectedRest = constrain(selectedRest, 0, 29);
+            drawName(prevHighlight);
+            drawName(selectedRest);
+        }
+        // If the joystick is pressed again
+        if (!joyClick) {
+            // SUBJECT TO CHANGE
+            restaurant rest;
+            getRestaurant(restDist[selectedRest].index, &rest);
+            CURSORY = lat_to_y(rest.lat) + CURSOR_SIZE/2;
+            CURSORX = lon_to_x(rest.lon) + CURSOR_SIZE/2;
+            MAPX = CURSORX - (DISPLAY_WIDTH - 48)/2;
+            MAPY = CURSORY - DISPLAY_HEIGHT/2;
+            checkMap();
+            redrawMap();
+            redrawCursor(ILI9341_RED);
+            break;
+        }
     }
-      /*issue where it loops back if we go off the screen on the top...*/
+    /*issue where it loops back if we go off the screen on the top...*/
     moveMap();
     redrawCursor(ILI9341_RED);
 }
 
 
-void getTouch(){
+void getTouch() {
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+The getTouch function takes no paramaters:
+
+It does not return any parameters.
+
+The point of this function is to sense when the display is touched and to
+call the drawCirlces function to display dots at the restaurant locations.
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
       TSPoint touch = ts.getPoint();
     if (touch.z < MINPRESSURE || touch.z > MAXPRESSURE) {
         return;
     }
     // mapping to the screen, same implementation as we did in class
     int16_t touched_x = map(touch.y, TS_MINY, TS_MAXY, DISPLAY_WIDTH - 48, 0);
-    //int16_t touched_y = map(touch.x, TS_MINX, TS_MAXX, 0, DISPLAY_HEIGHT - 1);
-        if (touched_x < DISPLAY_WIDTH - 48) {
-            Serial.println("Screen touched!");
-            drawCircles();
-        }
+    if (touched_x < DISPLAY_WIDTH - 48) {
+        Serial.println("Screen touched!");
+        drawCircles();
+    }
 }
 
 
 void processJoystick() {
-  /*  The point of this function is to use the joystick to move the cursor without
-  having the cursor leave a black trail, go off screen, not flicker will not moving,
-  and have a variable movement speed depending on the joystick movement.
+/*  The point of this function is to use the joystick to move the cursor without
+having the cursor leave a black trail, go off screen, not flicker will not moving,
+and have a variable movement speed depending on the joystick movement.
 
-    Arguments:
-        This function takes in no parameters.
+Arguments:
+This function takes in no parameters.
 
-    Returns:
-        This function returns nothing.
-  */
-  // This takes in the analog values of the joystick
-  int xVal = analogRead(JOY_HORIZ);
-  int yVal = analogRead(JOY_VERT);
-  int joyClick = digitalRead(JOY_SEL);
+Returns:
+This function returns nothing.
+*/
+    // This takes in the analog values of the joystick
+    int xVal = analogRead(JOY_HORIZ);
+    int yVal = analogRead(JOY_VERT);
+    int joyClick = digitalRead(JOY_SEL);
 
-  getTouch();
+    getTouch();  // Checking for touch
 
-  if (not joyClick) {
-    // run a function (function has to be in a while loop)
-    restaurantList();
-  }
-  // This check if the joystick has been moved
-  if (yVal < JOY_CENTER - JOY_DEADZONE || yVal > JOY_CENTER + JOY_DEADZONE
-    || xVal < JOY_CENTER - JOY_DEADZONE || xVal > JOY_CENTER + JOY_DEADZONE) {
-    // The distance from the centre of the joystick is measured and reduced
-    // by a factor of 100 so that it can be used as a variable
-    int deltaX = abs(JOY_CENTER - xVal)/100 + 1;
-    int deltaY = abs(JOY_CENTER - yVal)/100 + 1;
-
-
-    // map updates here
-    redrawMap();
-
-    // The cursor moves at a rate proportional with how far the joystick
-    // is pressed
-    if (yVal < JOY_CENTER - JOY_DEADZONE) {
-      CURSORY -= deltaY;  // decrease the y coordinate of the cursor
-    } else if (yVal > JOY_CENTER + JOY_DEADZONE) {
-      CURSORY += deltaY;
+    if (!joyClick) {
+        // When the joystick is pressed
+        restaurantList();
     }
+    // This check if the joystick has been moved
+    if (yVal < JOY_CENTER - JOY_DEADZONE || yVal > JOY_CENTER + JOY_DEADZONE ||
+        xVal < JOY_CENTER - JOY_DEADZONE || xVal > JOY_CENTER + JOY_DEADZONE) {
+        // The distance from the centre of the joystick is measured and reduced
+        // by a factor of 100 so that it can be used as a variable
+        int deltaX = abs(JOY_CENTER - xVal)/100 + 1;
+        int deltaY = abs(JOY_CENTER - yVal)/100 + 1;
 
-    // remember the x-reading increases as we push left
-    if (xVal > JOY_CENTER + JOY_DEADZONE) {
-      CURSORX -= deltaX;
-    } else if (xVal < JOY_CENTER - JOY_DEADZONE) {
-      CURSORX += deltaX;
+
+        // map updates here
+        redrawMap();
+
+        // The cursor moves at a rate proportional with how far the joystick
+        // is pressed
+        if (yVal < JOY_CENTER - JOY_DEADZONE) {
+            CURSORY -= deltaY;  // decrease the y coordinate of the cursor
+        } else if (yVal > JOY_CENTER + JOY_DEADZONE) {
+            CURSORY += deltaY;
+        }
+
+        // remember the x-reading increases as we push left
+        if (xVal > JOY_CENTER + JOY_DEADZONE) {
+            CURSORX -= deltaX;
+        } else if (xVal < JOY_CENTER - JOY_DEADZONE) {
+            CURSORX += deltaX;
+        }
+
+        // The cursor is restricted to the bounds of the screen and 48
+        // pixels from the right.
+        CURSORX = constrain(CURSORX, 0 + (CURSOR_SIZE/2),
+            DISPLAY_WIDTH - 49 - (CURSOR_SIZE/2));
+
+        CURSORY = constrain(CURSORY, 0 + (CURSOR_SIZE/2),
+            DISPLAY_HEIGHT - (CURSOR_SIZE/2));
+
+        // Draw a red square at the new position
+        redrawCursor(ILI9341_RED);
+
+        if (CURSORX <= CURSOR_SIZE/2 && MAPX != 0) {
+            MAPX -= DISPLAY_WIDTH - 48;
+            checkMap();
+            moveMap();
+            redrawCursor(ILI9341_RED);
+        } else if (CURSORX >= (DISPLAY_WIDTH - 48 - CURSOR_SIZE/2 - 1) &&
+                   MAPX != YEG_SIZE - DISPLAY_WIDTH - 48) {
+            MAPX += DISPLAY_WIDTH - 48;
+            checkMap();
+            moveMap();
+            redrawCursor(ILI9341_RED);
+        } else if (CURSORY <= CURSOR_SIZE/2 && MAPY != 0) {
+            MAPY -= DISPLAY_HEIGHT;
+            checkMap();
+            moveMap();
+            redrawCursor(ILI9341_RED);
+        } else if (CURSORY >= (DISPLAY_HEIGHT - CURSOR_SIZE/2) &&
+                   MAPY != YEG_SIZE - DISPLAY_HEIGHT) {
+            MAPY += DISPLAY_HEIGHT;
+            checkMap();
+            moveMap();
+            redrawCursor(ILI9341_RED);
+        }
     }
-
-    // The cursor is restricted to the bounds of the screen and 48
-    // pixels from the right.
-    CURSORX = constrain(CURSORX, 0 + (CURSOR_SIZE/2),
-      DISPLAY_WIDTH - 49 - (CURSOR_SIZE/2));
-
-    CURSORY = constrain(CURSORY, 0 + (CURSOR_SIZE/2),
-      DISPLAY_HEIGHT - (CURSOR_SIZE/2));
-
-    // Draw a red square at the new position
-    redrawCursor(ILI9341_RED);
-    //Serial.println(CURSORX);
-
-    if (CURSORX <= CURSOR_SIZE/2 && MAPX != 0) {
-      MAPX -= DISPLAY_WIDTH - 48;
-      checkMap();
-      moveMap();
-      redrawCursor(ILI9341_RED);
-    } else if (CURSORX >= (DISPLAY_WIDTH - 48 - CURSOR_SIZE/2 - 1) &&
-               MAPX != YEG_SIZE - DISPLAY_WIDTH - 48) {
-      MAPX += DISPLAY_WIDTH - 48;
-      checkMap();
-      moveMap();
-      redrawCursor(ILI9341_RED);
-    } else if (CURSORY <= CURSOR_SIZE/2 && MAPY != 0) {
-      MAPY -= DISPLAY_HEIGHT;
-      checkMap();
-      moveMap();
-      redrawCursor(ILI9341_RED);
-    } else if (CURSORY >= (DISPLAY_HEIGHT - CURSOR_SIZE/2) &&
-               MAPY != YEG_SIZE - DISPLAY_HEIGHT) {
-      MAPY += DISPLAY_HEIGHT;
-      checkMap();
-      moveMap();
-      redrawCursor(ILI9341_RED);
-    }
-  }
-  delay(20);
+    delay(20);
 }
 
 int main() {
-  /*  This is the main function from which all other functions are called.
+    /*  This is the main function from which all other functions are called.
 
     Arguments:
         This function takes in no parameters.
 
     Returns:
         This function returns nothing.
-  */
-  setup();
+    */
+    setup();
 
-  while (true) {
-    processJoystick();
-  }
+    while (true) {
+        processJoystick();
+    }
 
-  Serial.end();
-  return 0;
+    Serial.end();
+    return 0;
 }
