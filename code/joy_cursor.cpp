@@ -91,17 +91,17 @@ void redrawCursor(uint16_t colour);
 void moveMap();
 
 void setup() {
-  /*  The point of this function is to initialize the arduino and set the
-        modes for the various pins. This function also sets up the joy stick
-        and initializes the SD card. Finally this function draws the map 
-        and the cursor at the middle of the screen.
+/*  The point of this function is to initialize the arduino and set the
+    modes for the various pins. This function also sets up the joy stick
+    and initializes the SD card. Finally this function draws the map 
+    and the cursor at the middle of the screen.
 
     Arguments:
         This function takes in no parameters.
 
     Returns:
         This function returns nothing.
-    */
+*/
     // This initializes the arduino.
     init();
 
@@ -143,10 +143,10 @@ struct restaurant {
 The restaurant struct is responsible for holding all the data for the restaur-
 ants such as latitude (lat), longitude (lon), name, and their rating.
 * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-  int32_t lat;
-  int32_t lon;
-  uint8_t rating;  // from 0 to 10
-  char name[55];
+    int32_t lat;
+    int32_t lon;
+    uint8_t rating;  // from 0 to 10
+    char name[55];
 } restBlock[8];
 restaurant r;
 
@@ -197,41 +197,62 @@ indicating we have read in all 8 restaurants from the current block.
 
 
 void redrawMap()  {
-  /*  The point of this function is to redraw only the part of
-  the map where the cursor was before it moved.
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+The getRestaurant function takes in the paramaters:
+        restIndex: the current index of the restaurant block
+        restPtr  : a pointer to the restaurant block
+
+It does not return any parameters.
+
+This function is responsible for raw reading from the SD card in an efficient
+manner, only reading from the SD card when we have exceeded a restIndex of 8,
+indicating we have read in all 8 restaurants from the current block. 
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/*  The point of this function is to redraw only the part of
+    the map where the cursor was before it moved.
 
     Arguments:
         This function takes in no parameters.
 
     Returns:
         This function returns nothing.
-  */
-  // Drawing the map at the last location of the cursor.
-  lcd_image_draw(&yegImage, &tft, MAPX + (CURSORX - CURSOR_SIZE/2),
+*/
+    // Drawing the map at the last location of the cursor.
+    lcd_image_draw(&yegImage, &tft, MAPX + (CURSORX - CURSOR_SIZE/2),
     MAPY + (CURSORY - CURSOR_SIZE/2), CURSORX - CURSOR_SIZE/2,
     CURSORY - CURSOR_SIZE/2, CURSOR_SIZE, CURSOR_SIZE);
 }
 
 void redrawCursor(uint16_t colour) {
-  /*  The point of this function is to redraw the cursor at its current location
-  with a given colour.
+/*  The point of this function is to redraw the cursor at its current location
+    with a given colour.
 
     Arguments:
         uint17_t colour: This takes in a colour for the cursor.
 
     Returns:
         This function returns nothing.
-  */
-  // Drawing the cursor
-  tft.fillRect(CURSORX - CURSOR_SIZE/2, CURSORY - CURSOR_SIZE/2,
+*/
+    // Drawing the cursor
+    tft.fillRect(CURSORX - CURSOR_SIZE/2, CURSORY - CURSOR_SIZE/2,
                CURSOR_SIZE, CURSOR_SIZE, colour);
 }
 
 void moveMap() {
+/*  The moveMap function is responsible for moving the map appropriately
+    while the cursor moves on the screen. It also updates the cursor position
+    constrains it to the screen accordingly.
+
+    Arguments:
+        This function takes in no parameters.
+
+    Returns:
+        This function returns nothing.
+*/
     // NOT WORKING YET
     lcd_image_draw(&yegImage, &tft, MAPX, MAPY,
                  0, 0, DISPLAY_WIDTH - 48, DISPLAY_HEIGHT);
-    Serial.println(CURSORX);
+
     if ((CURSORX > YEG_SIZE- DISPLAY_WIDTH/2 || CURSORX < 0 + DISPLAY_WIDTH/2) &&
         (CURSORY > YEG_SIZE - DISPLAY_HEIGHT/2 || CURSORY < 0 + DISPLAY_HEIGHT/2)) {
         CURSORY = constrain(CURSORY, 0 + CURSOR_SIZE/2,
@@ -255,6 +276,15 @@ void moveMap() {
 
 
 void checkMap() {
+/*  The checkMap function is responsible for checking the map at appropriate
+    times while the cursor moves on the screen.
+
+    Arguments:
+        This function takes in no parameters.
+
+    Returns:
+        This function returns nothing.
+*/
   MAPX = constrain(MAPX, 0,
       YEG_SIZE - DISPLAY_WIDTH - 48);
 
