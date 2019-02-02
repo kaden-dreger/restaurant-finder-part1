@@ -1,0 +1,41 @@
+Names: Rutvik Patel and Kaden Dreger
+ID  : 1530012, 1528632
+CMPUT 275 Winter 2019
+Assignment 1 Part 1: Restaurant Finder
+-------------------------------------------
+Included files:
+    * get_restaurant.cpp
+    * Makefile
+    * README
+
+Required Components:
+    * Arduino MEGA 2560 Board
+    * Adafruit display
+    * SD Card (formatted correctly)
+    * Handful of wires
+
+Wiring Instructions:
+
+        ARDUINO PINS <--> DISPLAY PINS
+    -----------------------------------
+                 GND <--> GND
+                  5V <--> Vin
+                  52 <--> CLK
+                  50 <--> MISO
+                  51 <--> MOSI
+                  10 <--> CS
+                  9  <--> D/C
+                  A2 <--> Y+
+                  4  <--> X+
+                  5  <--> Y-
+                  A3 <--> X-
+                  6  <--> CCS
+
+Running Instructions:
+    In order to correctly run the program, you must ensure your microSD card is formatted correctly and inserted correctly into the tft display. You must then call the program while being in the correct directory in terminal with the file 'get_restaurant.cpp' and use the command: 'make upload'. The program will then compile and upload to your Arduino and start running.
+
+How to use:
+    The program will display a simple GUI on the tft display. Simply touch the SLOW or FAST button to start benchmarking your desired implementation and see the data displayed on the screen.
+
+Notes and Assumptions:
+    The function getRestaurant is the same version of the file shown in class. The program assumes that your SD card has been formatted properly, with the correct files ready to be accessed by this program. It also assumes that the user will not "overflow" the average count, which is when you press the button too many times (in one run through).

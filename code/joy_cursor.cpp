@@ -299,7 +299,7 @@ uint16_t  dist;   //  Manhatten  distance  to  cursor  position
 RestDist restDist[NUM_RESTAURANTS];
 
 
-void insertionSort(RestDist *array) {
+void iSort(RestDist *array) {
     int i = 1;
     int j;
     RestDist temp;
@@ -334,7 +334,7 @@ void fetchRests() {
         restDist[i].dist = abs((MAPX + CURSORX)-restX) + abs((MAPY + CURSORY) - restY);
     }
     // Insertion sort
-    insertionSort(&restDist[0]);
+    iSort(&restDist[0]);
 
     for (int16_t j = 0; j < 30; j++) {
         getRestaurant(restDist[j].index, &r);
