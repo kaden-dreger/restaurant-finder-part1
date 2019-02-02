@@ -249,10 +249,10 @@ void moveMap() {
         CURSORY = constrain(CURSORY, 0 + CURSOR_SIZE/2,
             DISPLAY_HEIGHT - CURSOR_SIZE/2);
         CURSORX = constrain(CURSORX, 0 + CURSOR_SIZE/2,
-            DISPLAY_WIDTH-48 - CURSOR_SIZE/2);
+            DISPLAY_WIDTH-49 - CURSOR_SIZE/2);
     } else if (CURSORX > YEG_SIZE- DISPLAY_WIDTH/2 || CURSORX < 0 + DISPLAY_WIDTH/2) {
         CURSORX = constrain(CURSORX, 0 + CURSOR_SIZE/2,
-            DISPLAY_WIDTH-48 - CURSOR_SIZE/2);
+            DISPLAY_WIDTH-49 - CURSOR_SIZE/2);
         CURSORY = DISPLAY_HEIGHT/2;
     } else if (CURSORY > YEG_SIZE - DISPLAY_HEIGHT/2 || CURSORY < 0 + DISPLAY_HEIGHT/2) {
         CURSORY = constrain(CURSORY, 0 + CURSOR_SIZE/2,
