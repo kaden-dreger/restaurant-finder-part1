@@ -244,22 +244,24 @@ void moveMap() {
     lcd_image_draw(&yegImage, &tft, MAPX, MAPY,
                  0, 0, DISPLAY_WIDTH - 48, DISPLAY_HEIGHT);
 
-    if ((CURSORX > YEG_SIZE- DISPLAY_WIDTH/2 || CURSORX < 0 + DISPLAY_WIDTH/2) &&
-        (CURSORY > YEG_SIZE - DISPLAY_HEIGHT/2 || CURSORY < 0 + DISPLAY_HEIGHT/2)) {
+    if ((CURSORX > YEG_SIZE- DISPLAY_WIDTH/2 || CURSORX < 0 + DISPLAY_WIDTH/2)
+        && (CURSORY > YEG_SIZE - DISPLAY_HEIGHT/2 || CURSORY < 0 +
+        DISPLAY_HEIGHT/2)) {
         CURSORY = constrain(CURSORY, 0 + CURSOR_SIZE/2,
             DISPLAY_HEIGHT - CURSOR_SIZE/2);
         CURSORX = constrain(CURSORX, 0 + CURSOR_SIZE/2,
             DISPLAY_WIDTH-49 - CURSOR_SIZE/2);
-    } else if (CURSORX > YEG_SIZE- DISPLAY_WIDTH/2 || CURSORX < 0 + DISPLAY_WIDTH/2) {
+    } else if (CURSORX > YEG_SIZE- DISPLAY_WIDTH/2 || CURSORX < 0 +
+                 DISPLAY_WIDTH/2) {
         CURSORX = constrain(CURSORX, 0 + CURSOR_SIZE/2,
             DISPLAY_WIDTH-49 - CURSOR_SIZE/2);
         CURSORY = DISPLAY_HEIGHT/2;
-    } else if (CURSORY > YEG_SIZE - DISPLAY_HEIGHT/2 || CURSORY < 0 + DISPLAY_HEIGHT/2) {
+    } else if (CURSORY > YEG_SIZE - DISPLAY_HEIGHT/2 || CURSORY < 0 +
+                 DISPLAY_HEIGHT/2) {
         CURSORY = constrain(CURSORY, 0 + CURSOR_SIZE/2,
             DISPLAY_HEIGHT - CURSOR_SIZE/2);
         CURSORX = (DISPLAY_WIDTH - 48)/2;
-    }
-    else {
+    } else {
         CURSORY = DISPLAY_HEIGHT/2;
         CURSORX = (DISPLAY_WIDTH - 48)/2;
     }
@@ -295,18 +297,34 @@ uint16_t  dist;   //  Manhatten  distance  to  cursor  position
 RestDist restDist[NUM_RESTAURANTS];
 
 
+void swap(RestDist* array, int m) {
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+The swap function is responsible for swapping two values in a given array.
+
+It takes in the parameters:
+    array: the array we wish to swap
+        m: the index at which the swapping occurs
+
+This array does not return anything, instead it modifies the array in memory.
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+    RestDist temp = array[m];
+    array[m] = array[m - 1];
+    array[m - 1] = temp;
+}
+
+
 void iSort(RestDist *array) {
-// This is the implementaion of insertion sort given in class.
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+The iSort struct is responsible for implementing the pseudocode given in class,
+following the insertion sort algorithm. It takes in the array that needs to be
+sorted, and modifies it in memory without return a value explicitly.
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
     int i = 1;
     int j;
-    RestDist temp;
     while (i < NUM_RESTAURANTS) {
         j = i;
         while (j > 0 && array[j - 1].dist > array[j].dist) {
-            // find the citation for the temp swap...
-            temp = array[j];
-            array[j] = array[j - 1];
-            array[j-1] = temp;
+            swap(array, j);  // swapping the two values
             j--;
         }
         i++;
@@ -442,21 +460,25 @@ is pressed putting the map and cursor at the selected restaurant.
             drawName(prevHighlight);
             drawName(selectedRest);
         } else if (yVal > JOY_CENTER + JOY_DEADZONE) {
-            selectedRest += 1;  // Go to the next restaurant
-            selectedRest = constrain(selectedRest, 0, 29);
-            drawName(prevHighlight);
-            drawName(selectedRest);
+            if (selectedRest == 29) {
+                selectedRest = 0;
+                drawName(prevHighlight);
+                drawName(selectedRest);
+            } else {
+                selectedRest += 1;  // Go to the next restaurant
+                selectedRest = constrain(selectedRest, 0, 29);
+                drawName(prevHighlight);
+                drawName(selectedRest);
+            }
         }
         // If the joystick is pressed again
         if (!joyClick) {
-            // SUBJECT TO CHANGE
             restaurant rest;
             getRestaurant(restDist[selectedRest].index, &rest);
             CURSORY = lat_to_y(rest.lat) + CURSOR_SIZE/2;
             CURSORX = lon_to_x(rest.lon) + CURSOR_SIZE/2;
             MAPX = CURSORX - (DISPLAY_WIDTH - 48)/2;
             MAPY = CURSORY - DISPLAY_HEIGHT/2;
-            //redrawCursor(ILI9341_RED);
             break;
         }
     }
@@ -490,9 +512,14 @@ call the drawCirlces function to display dots at the restaurant locations.
 
 
 void centreCursor() {
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+The centreCursor function is responsible for centering the cursor to the middle
+of the display. It takes in no parameters, nor does it return any value.
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
     CURSORX = (DISPLAY_WIDTH-48) / 2;
     CURSORY = DISPLAY_HEIGHT / 2;
 }
+
 
 void processJoystick() {
 /*  The point of this function is to use the joystick to move the cursor without
