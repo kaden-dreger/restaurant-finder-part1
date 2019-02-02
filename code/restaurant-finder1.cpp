@@ -456,14 +456,14 @@ is pressed putting the map and cursor at the selected restaurant.
             CURSORX = lon_to_x(rest.lon) + CURSOR_SIZE/2;
             MAPX = CURSORX - (DISPLAY_WIDTH - 48)/2;
             MAPY = CURSORY - DISPLAY_HEIGHT/2;
-            checkMap();
-            redrawMap();
-            redrawCursor(ILI9341_RED);
+            //redrawCursor(ILI9341_RED);
             break;
         }
     }
     /*issue where it loops back if we go off the screen on the top...*/
+    checkMap();
     moveMap();
+    redrawMap();
     redrawCursor(ILI9341_RED);
 }
 
