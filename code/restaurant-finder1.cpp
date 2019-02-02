@@ -90,6 +90,7 @@ uint16_t selectedRest = 0;
 void redrawCursor(uint16_t colour);
 void moveMap();
 
+
 void setup() {
 /*  The point of this function is to initialize the arduino and set the
     modes for the various pins. This function also sets up the joy stick
@@ -137,6 +138,7 @@ void setup() {
 
     redrawCursor(ILI9341_RED);  // Draws the cursor to the screen
 }
+
 
 struct restaurant {
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -210,6 +212,7 @@ the map where the cursor was before it moved.
     CURSORY - CURSOR_SIZE/2, CURSOR_SIZE, CURSOR_SIZE);
 }
 
+
 void redrawCursor(uint16_t colour) {
 /*  The point of this function is to redraw the cursor at its current location
     with a given colour.
@@ -224,6 +227,7 @@ void redrawCursor(uint16_t colour) {
     tft.fillRect(CURSORX - CURSOR_SIZE/2, CURSORY - CURSOR_SIZE/2,
                CURSOR_SIZE, CURSOR_SIZE, colour);
 }
+
 
 void moveMap() {
 /*  The moveMap function is responsible for moving the map appropriately
@@ -279,6 +283,7 @@ void checkMap() {
         YEG_SIZE - DISPLAY_HEIGHT);
 }
 
+
 struct  RestDist {
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 The RestDist struct is responsible for holding the index and manhattan distance
@@ -307,6 +312,7 @@ void iSort(RestDist *array) {
         i++;
     }
 }
+
 
 void fetchRests() {
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -350,6 +356,7 @@ then list the closest 30 to the display.
     }
     tft.print("\n");
 }
+
 
 void drawCircles() {
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -475,13 +482,17 @@ call the drawCirlces function to display dots at the restaurant locations.
         return;
     }
     // mapping to the screen, same implementation as we did in class
-    int16_t touched_x = map(touch.y, TS_MINY, TS_MAXY, DISPLAY_WIDTH - 48, 0);
+    int16_t touched_x = map(touch.y, TS_MINY, TS_MAXY, DISPLAY_WIDTH, 0);
     if (touched_x < DISPLAY_WIDTH - 48) {
-        Serial.println("Screen touched!");
         drawCircles();
     }
 }
 
+
+void centreCursor() {
+    CURSORX = (DISPLAY_WIDTH-48) / 2;
+    CURSORY = DISPLAY_HEIGHT / 2;
+}
 
 void processJoystick() {
 /*  The point of this function is to use the joystick to move the cursor without
@@ -546,29 +557,34 @@ This function returns nothing.
         if (CURSORX <= CURSOR_SIZE/2 && MAPX != 0) {
             MAPX -= DISPLAY_WIDTH - 48;
             checkMap();
+            centreCursor();
             moveMap();
             redrawCursor(ILI9341_RED);
         } else if (CURSORX >= (DISPLAY_WIDTH - 48 - CURSOR_SIZE/2 - 1) &&
                    MAPX != YEG_SIZE - DISPLAY_WIDTH - 48) {
             MAPX += DISPLAY_WIDTH - 48;
             checkMap();
+            centreCursor();
             moveMap();
             redrawCursor(ILI9341_RED);
         } else if (CURSORY <= CURSOR_SIZE/2 && MAPY != 0) {
             MAPY -= DISPLAY_HEIGHT;
             checkMap();
+            centreCursor();
             moveMap();
             redrawCursor(ILI9341_RED);
         } else if (CURSORY >= (DISPLAY_HEIGHT - CURSOR_SIZE/2) &&
                    MAPY != YEG_SIZE - DISPLAY_HEIGHT) {
             MAPY += DISPLAY_HEIGHT;
             checkMap();
+            centreCursor();
             moveMap();
             redrawCursor(ILI9341_RED);
         }
     }
     delay(20);
 }
+
 
 int main() {
     /*  This is the main function from which all other functions are called.
