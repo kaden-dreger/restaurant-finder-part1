@@ -1,3 +1,26 @@
+/*
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+Assignment 1 Part 1: Restaurants Finder
+Names: Rutvik Patel, Kaden Dreger
+ID: 1530012, 1528632
+CCID: rutvik, kaden
+CMPUT 275 Winter 2018
+
+This program demonstrates how to raw read restaurant information from the
+formatted SD card. It introduces a simple GUI on the tft display and makes use
+of the touchscreen to run specific functions. It features an explorable map of
+Edmonton via the joystick, and also implements the ability to click the joystick
+to fetches and sorts the 30 closest restaurants to the cursor location. You can
+then select a restaurant and the cursor will snap to the location of the
+restaurant. It also features the ability to tap the screen to bring up small
+rectangles on the display to indicate the location of the restaurants on your
+screen.
+
+NOTE: This program requires a correctly formatted
+SD card with the neccessary files to run the program.
+* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+*/
+
 // Importing libraries
 #include <Arduino.h>
 #include <SPI.h>
@@ -11,14 +34,9 @@
 #define TFT_CS 10
 #define SD_CS 6
 
-Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
-Sd2Card card;
-
 #define DISPLAY_WIDTH  320
 #define DISPLAY_HEIGHT 240
 #define YEG_SIZE 2048
-
-lcd_image_t yegImage = { "yeg-big.lcd", YEG_SIZE, YEG_SIZE };
 
 #define JOY_VERT  A1  // should connect A1 to pin VRx
 #define JOY_HORIZ A0  // should connect A0 to pin VRy
@@ -51,22 +69,24 @@ lcd_image_t yegImage = { "yeg-big.lcd", YEG_SIZE, YEG_SIZE };
 #define  LON_WEST  -11368652l
 #define  LON_EAST  -11333496l
 
-
 TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
+lcd_image_t yegImage = { "yeg-big.lcd", YEG_SIZE, YEG_SIZE };
+Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
+Sd2Card card;
+
 // the cursor position on the display
 int CURSORX = (DISPLAY_WIDTH - 48)/2;
 int CURSORY = DISPLAY_HEIGHT/2;
 int MAPX = YEG_SIZE/2 - (DISPLAY_WIDTH - 48)/2;
 int MAPY = YEG_SIZE/2 - DISPLAY_HEIGHT/2;
 
-//restaurant restBlock[8];  // creating an array of structs
 uint32_t nowBlock;
-char* nameArray[30];
 int squareSize = 8;
-//bool touched = false;
+
 // The initial selected restraunt
 uint16_t selectedRest = 0;
-// forward declaration for redrawing the cursor
+
+// forward declaration for redrawing the cursor and moving map.
 void redrawCursor(uint16_t colour);
 void moveMap();
 
@@ -83,19 +103,19 @@ void setup() {
         This function returns nothing.
     */
     // This initializes the arduino.
-  init();
+    init();
 
-  Serial.begin(9600);
+    Serial.begin(9600);
 
-  pinMode(JOY_SEL, INPUT_PULLUP);
+    pinMode(JOY_SEL, INPUT_PULLUP);
 
-  tft.begin();
+    tft.begin();
 
-  Serial.println("Initializing SD card...");
-  if (!SD.begin(SD_CS)) {
-    Serial.println("failed! Is it inserted properly?");
-    while (true) {}
-  } else {
+    Serial.println("Initializing SD card...");
+    if (!SD.begin(SD_CS)) {
+        Serial.println("failed! Is it inserted properly?");
+        while (true) {}
+    } else {
         Serial.println("OK!");
     }
     Serial.println("Initializing SPI communication for raw reads...");
@@ -103,10 +123,9 @@ void setup() {
         Serial.println("failed! Is the card inserted properly?");
     while (true) {}
     } else {
-    Serial.println("OK!");
-    Serial.println("---------------------------------------------------------");
+        Serial.println("OK!");
+        Serial.println("------------------------------------------------------");
     }
-  //Serial.println("OK!");
 
   tft.setRotation(3);  // Sets the proper orientation of the display
 
@@ -129,21 +148,25 @@ ants such as latitude (lat), longitude (lon), name, and their rating.
   uint8_t rating;  // from 0 to 10
   char name[55];
 } restBlock[8];
-
 restaurant r;
 
 
+/* The following two functions are identical to the ones provided in the
+assignment description. These functions take in the longitude and latitude
+(respectively) and return the mapped location onto the screen*/
 int16_t  lon_to_x(int32_t  lon) {
-  return  map(lon , LON_WEST , LON_EAST , 0, MAP_WIDTH);
+    return  map(lon , LON_WEST , LON_EAST , 0, MAP_WIDTH);
 }
+
+
 int16_t  lat_to_y(int32_t  lat) {
-  return  map(lat , LAT_NORTH , LAT_SOUTH , 0, MAP_HEIGHT);
+    return  map(lat , LAT_NORTH , LAT_SOUTH , 0, MAP_HEIGHT);
 }
 
 
 void getRestaurant(int restIndex, restaurant* restPtr) {
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-The getRestaurantFast function takes in the paramaters:
+The getRestaurant function takes in the paramaters:
         restIndex: the current index of the restaurant block
         restPtr  : a pointer to the restaurant block
 
@@ -157,12 +180,11 @@ indicating we have read in all 8 restaurants from the current block.
     the restIndex is has exceeded a "multiple of 8" meaning the pointer is now
     past the current block we are reading.
     */
-    //if ((restIndex % 8) == 0) {
     uint32_t blockNum = REST_START_BLOCK + restIndex/8;
     if (nowBlock == blockNum) {
         *restPtr = restBlock[restIndex % 8];
     } else {
-        nowBlock = blockNum;
+        nowBlock = blockNum;  //set the current block to the blockNum
 
         while (!card.readBlock(blockNum, (uint8_t*) restBlock)) {  // raw read
         Serial.println("Read block failed, trying again.");  // from the SD card
@@ -206,11 +228,29 @@ void redrawCursor(uint16_t colour) {
 }
 
 void moveMap() {
-  lcd_image_draw(&yegImage, &tft, MAPX, MAPY,
+    // NOT WORKING YET
+    lcd_image_draw(&yegImage, &tft, MAPX, MAPY,
                  0, 0, DISPLAY_WIDTH - 48, DISPLAY_HEIGHT);
-  CURSORY = DISPLAY_HEIGHT/2;
-  CURSORX =  (DISPLAY_WIDTH - 48)/2;
-  //redrawCursor(ILI9341_RED);
+    Serial.println(CURSORX);
+    if ((CURSORX > YEG_SIZE- DISPLAY_WIDTH/2 || CURSORX < 0 + DISPLAY_WIDTH/2) &&
+        (CURSORY > YEG_SIZE - DISPLAY_HEIGHT/2 || CURSORY < 0 + DISPLAY_HEIGHT/2)) {
+        CURSORY = constrain(CURSORY, 0 + CURSOR_SIZE/2,
+            DISPLAY_HEIGHT - CURSOR_SIZE/2);
+        CURSORX = constrain(CURSORX, 0 + CURSOR_SIZE/2,
+            DISPLAY_WIDTH-48 - CURSOR_SIZE/2);
+    } else if (CURSORX > YEG_SIZE- DISPLAY_WIDTH/2 || CURSORX < 0 + DISPLAY_WIDTH/2) {
+        CURSORX = constrain(CURSORX, 0 + CURSOR_SIZE/2,
+            DISPLAY_WIDTH-48 - CURSOR_SIZE/2);
+        CURSORY = DISPLAY_HEIGHT/2;
+    } else if (CURSORY > YEG_SIZE - DISPLAY_HEIGHT/2 || CURSORY < 0 + DISPLAY_HEIGHT/2) {
+        CURSORY = constrain(CURSORY, 0 + CURSOR_SIZE/2,
+            DISPLAY_HEIGHT - CURSOR_SIZE/2);
+        CURSORX = (DISPLAY_WIDTH - 48)/2;
+    }
+    else {
+        CURSORY = DISPLAY_HEIGHT/2;
+        CURSORX = (DISPLAY_WIDTH - 48)/2;
+    }
 }
 
 
@@ -275,8 +315,6 @@ void fetchRests() {
             //  black  characters  on  white  background
             tft.setTextColor (0x0000 , 0xFFFF);
         }
-        nameArray[j] = r.name;
-        Serial.println(nameArray[j]);
         tft.print(r.name);
         tft.print("\n");
 
@@ -304,12 +342,6 @@ void drawCircles() {
         if ((restX > MAPX + squareSize && restX < MAPX + DISPLAY_WIDTH - 48 -
              squareSize) && (restY > MAPY + squareSize && restY < MAPY +
               DISPLAY_HEIGHT - squareSize)) {
-            //Serial.println("maps read in");
-            /*
-            Serial.print("x: ");
-            Serial.print(restX);
-            Serial.println();
-            */
             tft.fillRect(restX - MAPX, restY - MAPY, squareSize, squareSize, ILI9341_BLUE);
         }
     }
@@ -330,7 +362,6 @@ void drawName(uint16_t index) {
     tft.setTextColor(ILI9341_WHITE, ILI9341_BLACK);
   }
   tft.println(rest.name);
-  //Serial.println(rest.name);
 }
 
 
@@ -372,6 +403,7 @@ void restaurantList() {
           CURSORX = lon_to_x(rest.lon) + CURSOR_SIZE/2;
           MAPX = CURSORX - (DISPLAY_WIDTH - 48)/2;
           MAPY = CURSORY - DISPLAY_HEIGHT/2;
+          checkMap();
           redrawMap();
           redrawCursor(ILI9341_RED);
           break;
