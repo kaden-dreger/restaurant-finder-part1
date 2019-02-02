@@ -306,7 +306,7 @@ void iSort(RestDist *array) {
     while (i < NUM_RESTAURANTS) {
         j = i;
         while (j > 0 && array[j - 1].dist > array[j].dist) {
-            //find the citation for the temp swap...
+            // find the citation for the temp swap...
             temp = array[j];
             array[j] = array[j - 1];
             array[j-1] = temp;
@@ -376,8 +376,10 @@ void drawCircles() {
         }
     }
 }
-// This is from displayNames
-// draws the name at the given index to the display
+
+
+// This is from the displayNames file shown in class. 
+// It draws the name at the given index to the display,
 // assumes the text size is already 2, that text
 // is not wrapping, and 0 <= index < number of names in the list
 void drawName(uint16_t index) {
