@@ -240,10 +240,12 @@ void moveMap() {
     Returns:
         This function returns nothing.
 */
-    // NOT WORKING YET
+    // Redrawing the map
     lcd_image_draw(&yegImage, &tft, MAPX, MAPY,
                  0, 0, DISPLAY_WIDTH - 48, DISPLAY_HEIGHT);
 
+    // Checking if the cursor is off the screen or near the edge
+    // And then drawing the cursor somewhere other than the middle of the screen
     if ((CURSORX > YEG_SIZE- DISPLAY_WIDTH/2 || CURSORX < 0 + DISPLAY_WIDTH/2)
         && (CURSORY > YEG_SIZE - DISPLAY_HEIGHT/2 || CURSORY < 0 +
         DISPLAY_HEIGHT/2)) {
@@ -261,6 +263,7 @@ void moveMap() {
         CURSORY = constrain(CURSORY, 0 + CURSOR_SIZE/2,
             DISPLAY_HEIGHT - CURSOR_SIZE/2);
         CURSORX = (DISPLAY_WIDTH - 48)/2;
+    // Otherwise place the cursor at the centre of the screen
     } else {
         CURSORY = DISPLAY_HEIGHT/2;
         CURSORX = (DISPLAY_WIDTH - 48)/2;
